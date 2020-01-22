@@ -1,5 +1,6 @@
 ---
-title: "Biostat 203B Homework 1"
+title: "Biostat 203B Homework 1 Solution"
+author: Ami Sheth (UID:005353379)
 subtitle: Due Jan 24 @ 11:59PM
 output: html_document
 ---
@@ -20,9 +21,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 4. After each homework due date, teaching assistant and instructor will check out your master branch for grading. Tag each of your homework submissions with tag names `hw1`, `hw2`, ... Tagging time will be used as your submission time. That means if you tag your `hw1` submission after deadline, penalty points will be deducted for late submission.
 
+**Solution:** I have created this repository, which you are reading now.
+
 ## Q2. Linux Shell Commands
 
 1. This exercise (and later in this course) uses the [MIMIC-III data](https://mimic.physionet.org), a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Please follow the instructions at <https://mimic.physionet.org/gettingstarted/access/> to complete the CITI `Data or Specimens Only Research` course. Show the screenshot of your completion report. 
+
+**Solution:** Here is a screenshot of my completion report.
+<!-- give screenshot a meaningful name, google markdown how to insert a picture or go to slides (source code, lecture 1), need to upload photo into the teaching server so everything is reproducible 
+
+<p align="center">
+  <img src="./INSERT NAME OF FILE" height="350" width="500">
+</p> -->
 
 2. The `/home/203bdata/mimic-iii/` folder on teaching server contains data sets from MIMIC-III. See <https://mimic.physionet.org/mimictables/admissions/> for details of each table.  
     ```{bash}
@@ -39,9 +49,32 @@ Please, do **not** put these data files into Git; they are big. Also do **not** 
         ls $datafile
       done
     ```
+
+**Solution:** The output of above code chunk 
+    ```{bash, eval=TRUE}
+    for datafile in /home/203bdata/mimic-iii/*.csv
+      do
+        ls $datafile
+      done
+    ```
+
 Display the number of lines in each `csv` file.
 
+**Solution:** Let's display the number of lines in each `csv` file
+```{bash}
+ for datafile in /home/203bdata/mimic-iii/*.csv
+  do
+   wc -l $datafile
+  done 
+```
+
 4. Display the first few lines of `ADMISSIONS.csv`. How many rows are in this data file? How many unique patients (identified by `SUBJECT_ID`) are in this data file? What are the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`? How many (unique) patients are Hispanic? (Hint: combine Linux comamnds `head`, `tail`, `awk`, `uniq`, `wc`, `sort` and so on using pipe.)
+
+**Solution:** Let's display first 10 lines of `ADMISSIONS.csv`
+
+```{bash}
+head /home/203bdata/mimic-iii/ADMISSIONS.csv
+```
 
 ## Q3. More fun with shell
 
@@ -82,6 +115,11 @@ $$
   \frac{\sum_{r=1}^{\text{rep}} (\widehat \mu_r - \mu_{\text{true}})^2}{\text{rep}}
 $$
 for both methods.
+
+**Solution:** 
+```{bash, eval=FALSE}
+cat runSim.R
+```
 
 2. Modify the [`autoSim.R`](https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R) script to run simulations with combinations of sample sizes `nVals = seq(100, 500, by=100)` and distributions `distTypes = c("gaussian", "t1", "t5")` and write output to appropriately named files. Use `rep = 50`, and `seed = 203`. 
 
