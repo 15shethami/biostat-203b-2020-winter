@@ -112,23 +112,26 @@ grep 'HISPANIC' /home/203bdata/mimic-iii/ADMISSIONS.csv | awk -F, '{ print $2 }'
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
-**Solution:** Let's display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively <!-- how to get the names displayed next to the number, do not add to git will this be reproducible --> 
+**Solution:** Let's display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively <!-- do not add to git will this be reproducible --> 
 ```{bash}
 for name in Elizabeth Jane Lydia Darcy
       do
+        echo $name
         grep $name pride_and_prejudice.txt | wc -l
       done
 ```
 
 
 0. What's the difference between the following two commands?
-    ```{bash eval=FALSE}
+    ```{bash, eval=FALSE}
     echo 'hello, world' > test1.txt
     ```
     and
-    ```{bash eval=FALSE}
+    ```{bash, eval=FALSE}
     echo 'hello, world' >> test2.txt
     ```
+
+**Solution:** The first command directs output from one command to a file, so 'hello, world' is copied into a new script. The second command appends output from one command to a file, so 'hello, world' could be added to a new or previously existing script. Since 'hello, world' is appended to an empty script, the output from the first and second command appear to be the same.
 
 0. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
     ```{bash eval=FALSE}
@@ -137,11 +140,31 @@ for name in Elizabeth Jane Lydia Darcy
     # Usage: bash middle.sh filename end_line num_lines
     head -n "$2" "$1" | tail -n "$3"
     ```
+
+**Solution:** Let's copy and paste the above lines into vi and save the file as `middle.sh`
+```{bash, eval=FALSE}
+vi middle.sh
+```
+
 Using `chmod` make the file executable by the owner, and run 
     ```{bash eval=FALSE}
     ./middle.sh pride_and_prejudice.txt 20 5
     ```
+
+**Solution:** Let's make the file executable by the owner 
+```{bash}
+chmod 764 middle.sh 
+```
+
+and run the code
+```{bash}
+./middle.sh pride_and_prejudice.txt 20 5
+#head -n 20 pride_and_prejudice.txt | tail -n 5
+```
+
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
+
+**Solution:** 1 is the filename, tells us to run head on the pride and prejudice text, 2 is the argument that tells us how many lines to head, 3 tells us how many lines to display from the bottom of `heads` output; the first line tell us which shell to run the `middle.sh` file in 
 
 ## Q4. R Batch Run
 
@@ -154,8 +177,9 @@ $$
 for both methods.
 
 **Solution:** 
-```{bash, eval=FALSE}
-cat runSim.R
+```{bash}
+
+Rscript runSim.R seed=203 n=100 dist=gaussian rep=50
 ```
 
 2. Modify the [`autoSim.R`](https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R) script to run simulations with combinations of sample sizes `nVals = seq(100, 500, by=100)` and distributions `distTypes = c("gaussian", "t1", "t5")` and write output to appropriately named files. Use `rep = 50`, and `seed = 203`. 

@@ -683,6 +683,9 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 <pre class="bash"><code>echo 'hello, world' &gt; test1.txt</code></pre>
 <p>and</p>
 <pre class="bash"><code>echo 'hello, world' &gt;&gt; test2.txt</code></pre></li>
+</ol>
+<p><strong>Solution:</strong> The first command directs output from one command to a file, so ‘hello, world’ is copied into a new script. The second command appends output from one command to a file, so ‘hello, world’ could be added to a new or previously existing script. Since ‘hello, world’ is appended to an empty script, the output from the first and second command appear to be the same.</p>
+<ol start="0" style="list-style-type: decimal">
 <li><p>Using your favorite text editor (e.g., <code>vi</code>), type the following and save the file as <code>middle.sh</code>:</p>
 <pre class="bash"><code>#!/bin/sh
 # Select lines from the middle of a file.
