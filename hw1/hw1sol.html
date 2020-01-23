@@ -494,9 +494,7 @@ for datafile in /home/203bdata/mimic-iii/*.csv
 <p><strong>Solution:</strong> Let’s display the number of unique patients (identified by <code>SUBJECT_ID</code>) in this data file</p>
 <pre class="bash"><code>awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | wc -l</code></pre>
 <pre><code>## 46521</code></pre>
-<!-- difference between no F, -F:, and -F, -->
 <p><strong>Solution:</strong> Let’s display the possible values taken by each of the variable <code>INSURANCE</code>, <code>LANGUAGE</code>, <code>RELIGION</code>, <code>MARITAL_STATUS</code>, and <code>ETHNICITY</code></p>
-<!-- identify column with name instead of number? -->
 <pre class="bash"><code>awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
@@ -669,14 +667,19 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 <pre class="bash"><code>curl http://www.gutenberg.org/cache/epub/42671/pg42671.txt &gt; pride_and_prejudice.txt</code></pre>
 <p>Do <strong>not</strong> put this text file <code>pride_and_prejudice.txt</code> in Git. Using a <code>for</code> loop, how would you tabulate the number of times each of the four characters is mentioned?</p></li>
 </ol>
-<p><strong>Solution:</strong> Let’s display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively <!-- how to get the names displayed next to the number, do not add to git will this be reproducible --></p>
+<p><strong>Solution:</strong> Let’s display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively</p>
 <pre class="bash"><code>for name in Elizabeth Jane Lydia Darcy
       do
+        echo $name
         grep $name pride_and_prejudice.txt | wc -l
       done</code></pre>
-<pre><code>## 633
+<pre><code>## Elizabeth
+## 633
+## Jane
 ## 290
+## Lydia
 ## 166
+## Darcy
 ## 414</code></pre>
 <ol start="0" style="list-style-type: decimal">
 <li><p>What’s the difference between the following two commands?</p>
@@ -690,11 +693,26 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 <pre class="bash"><code>#!/bin/sh
 # Select lines from the middle of a file.
 # Usage: bash middle.sh filename end_line num_lines
-head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
-<p>Using <code>chmod</code> make the file executable by the owner, and run</p>
-<pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5</code></pre>
-<p>Explain the output. Explain the meaning of <code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> in this shell script. Why do we need the first line of the shell script?</p></li>
+head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre></li>
 </ol>
+<p><strong>Solution:</strong> Let’s copy and paste the above lines into vi and save the file as <code>middle.sh</code></p>
+<pre class="bash"><code>vi middle.sh</code></pre>
+<p>Using <code>chmod</code> make the file executable by the owner, and run</p>
+<pre><code>```bash
+./middle.sh pride_and_prejudice.txt 20 5
+```</code></pre>
+<p><strong>Solution:</strong> Let’s make the file executable by the owner</p>
+<pre class="bash"><code>chmod 764 middle.sh </code></pre>
+<p>and run the code</p>
+<pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5
+#head -n 20 pride_and_prejudice.txt | tail -n 5</code></pre>
+<pre><code>## 
+## Author: Jane Austen
+## 
+## Editor: R. W. (Robert William) Chapman
+## </code></pre>
+<p>Explain the output. Explain the meaning of <code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> in this shell script. Why do we need the first line of the shell script?</p>
+<p><strong>Solution:</strong> 1 is the filename, tells us to run head on the pride and prejudice text, 2 is the argument that tells us how many lines to head, 3 tells us how many lines to display from the bottom of <code>heads</code> output; the first line tell us which shell to run the <code>middle.sh</code> file in</p>
 </div>
 <div id="q4.-r-batch-run" class="section level2">
 <h2>Q4. R Batch Run</h2>
@@ -705,7 +723,10 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 \]</span> for both methods.</li>
 </ol>
 <p><strong>Solution:</strong></p>
-<pre class="bash"><code>cat runSim.R</code></pre>
+<pre class="bash"><code>
+Rscript runSim.R seed=203 n=100 dist=\&quot;gaussian\&quot; rep=50</code></pre>
+<pre><code>## [1] 0.03926458
+## [1] 0.01146443</code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li><p>Modify the <a href="https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R"><code>autoSim.R</code></a> script to run simulations with combinations of sample sizes <code>nVals = seq(100, 500, by=100)</code> and distributions <code>distTypes = c(&quot;gaussian&quot;, &quot;t1&quot;, &quot;t5&quot;)</code> and write output to appropriately named files. Use <code>rep = 50</code>, and <code>seed = 203</code>.</p></li>
 <li><p>Write an R script to collect simulation results from output files and print average MSEs in a table of format</p></li>

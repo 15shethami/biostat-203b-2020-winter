@@ -85,11 +85,9 @@ awk 'END { print NR }' /home/203bdata/mimic-iii/ADMISSIONS.csv
 ```{bash}
 awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | wc -l
 ```
-<!-- difference between no F, -F:, and -F, -->
 
 **Solution:** Let's display the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`
 
-<!-- identify column with name instead of number? -->
 ```{bash}
 awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
@@ -112,7 +110,7 @@ grep 'HISPANIC' /home/203bdata/mimic-iii/ADMISSIONS.csv | awk -F, '{ print $2 }'
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
-**Solution:** Let's display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively <!-- do not add to git will this be reproducible --> 
+**Solution:** Let's display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively
 ```{bash}
 for name in Elizabeth Jane Lydia Darcy
       do
@@ -179,7 +177,7 @@ for both methods.
 **Solution:** 
 ```{bash}
 
-Rscript runSim.R seed=203 n=100 dist=gaussian rep=50
+Rscript runSim.R seed=203 n=100 dist=\"gaussian\" rep=50
 ```
 
 2. Modify the [`autoSim.R`](https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R) script to run simulations with combinations of sample sizes `nVals = seq(100, 500, by=100)` and distributions `distTypes = c("gaussian", "t1", "t5")` and write output to appropriately named files. Use `rep = 50`, and `seed = 203`. 
