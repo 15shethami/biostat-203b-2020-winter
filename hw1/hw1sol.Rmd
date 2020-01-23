@@ -76,6 +76,28 @@ Display the number of lines in each `csv` file.
 head /home/203bdata/mimic-iii/ADMISSIONS.csv
 ```
 
+**Solution:** Let's display the number of rows in this data file
+```{bash}
+awk 'END { print NR }' /home/203bdata/mimic-iii/ADMISSIONS.csv
+```
+
+**Solution:** Let's display the number of unique patients (identified by `SUBJECT_ID`) in this data file
+```{bash}
+awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | wc -l
+```
+<!-- difference between no F, -F:, and -F, -->
+
+**Solution:** Let's display the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`
+
+```{bash}
+awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $13 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+```
+
+
 ## Q3. More fun with shell
 
 1. You and your friend just have finished reading *Pride and Prejudice* by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <http://www.gutenberg.org/cache/epub/42671/pg42671.txt> and save to your local folder. 
