@@ -488,6 +488,179 @@ for datafile in /home/203bdata/mimic-iii/*.csv
 ## 27,27,134931,2191-11-30 22:16:00,2191-12-03 14:45:00,,&quot;NEWBORN&quot;,&quot;PHYS REFERRAL/NORMAL DELI&quot;,&quot;HOME&quot;,&quot;Private&quot;,,&quot;CATHOLIC&quot;,,&quot;WHITE&quot;,,,&quot;NEWBORN&quot;,0,1
 ## 28,28,162569,2177-09-01 07:15:00,2177-09-06 16:00:00,,&quot;ELECTIVE&quot;,&quot;PHYS REFERRAL/NORMAL DELI&quot;,&quot;HOME HEALTH CARE&quot;,&quot;Medicare&quot;,,&quot;CATHOLIC&quot;,&quot;MARRIED&quot;,&quot;WHITE&quot;,,,&quot;CORONARY ARTERY DISEASE\CORONARY ARTERY BYPASS GRAFT/SDA&quot;,0,1
 ## 29,30,104557,2172-10-14 14:17:00,2172-10-19 14:37:00,,&quot;URGENT&quot;,&quot;TRANSFER FROM HOSP/EXTRAM&quot;,&quot;HOME HEALTH CARE&quot;,&quot;Medicare&quot;,,&quot;CATHOLIC&quot;,&quot;MARRIED&quot;,&quot;UNKNOWN/NOT SPECIFIED&quot;,,,&quot;UNSTABLE ANGINA\CATH&quot;,0,1</code></pre>
+<p><strong>Solution:</strong> Let’s display the number of rows in this data file</p>
+<pre class="bash"><code>awk 'END { print NR }' /home/203bdata/mimic-iii/ADMISSIONS.csv</code></pre>
+<pre><code>## 58977</code></pre>
+<p><strong>Solution:</strong> Let’s display the number of unique patients (identified by <code>SUBJECT_ID</code>) in this data file</p>
+<pre class="bash"><code>awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | wc -l</code></pre>
+<pre><code>## 46521</code></pre>
+<!-- difference between no F, -F:, and -F, -->
+<p><strong>Solution:</strong> Let’s display the possible values taken by each of the variable <code>INSURANCE</code>, <code>LANGUAGE</code>, <code>RELIGION</code>, <code>MARITAL_STATUS</code>, and <code>ETHNICITY</code></p>
+<!-- identify column with name instead of number? -->
+<pre class="bash"><code>awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $13 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
+<pre><code>## &quot;Government&quot;
+## &quot;INSURANCE&quot;
+## &quot;Medicaid&quot;
+## &quot;Medicare&quot;
+## &quot;Private&quot;
+## &quot;Self Pay&quot;
+## 
+## &quot;ALBA&quot;
+## &quot;AMER&quot;
+## &quot;*AMH&quot;
+## &quot;*ARA&quot;
+## &quot;ARAB&quot;
+## &quot;*ARM&quot;
+## &quot;* BE&quot;
+## &quot;*BEN&quot;
+## &quot;BENG&quot;
+## &quot;*BOS&quot;
+## &quot;*BUL&quot;
+## &quot;*BUR&quot;
+## &quot;CAMB&quot;
+## &quot;*CAN&quot;
+## &quot;CANT&quot;
+## &quot;CAPE&quot;
+## &quot;*CDI&quot;
+## &quot;*CHI&quot;
+## &quot;*CRE&quot;
+## &quot;*DEA&quot;
+## &quot;*DUT&quot;
+## &quot;ENGL&quot;
+## &quot;ETHI&quot;
+## &quot;*FAR&quot;
+## &quot;*FIL&quot;
+## &quot;FREN&quot;
+## &quot;* FU&quot;
+## &quot;*FUL&quot;
+## &quot;GERM&quot;
+## &quot;GREE&quot;
+## &quot;*GUJ&quot;
+## &quot;HAIT&quot;
+## &quot;HIND&quot;
+## &quot;*HUN&quot;
+## &quot;*IBO&quot;
+## &quot;ITAL&quot;
+## &quot;JAPA&quot;
+## &quot;*KHM&quot;
+## &quot;KORE&quot;
+## &quot;LANGUAGE&quot;
+## &quot;LAOT&quot;
+## &quot;*LEB&quot;
+## &quot;*LIT&quot;
+## &quot;*MAN&quot;
+## &quot;MAND&quot;
+## &quot;*MOR&quot;
+## &quot;*NEP&quot;
+## &quot;*PER&quot;
+## &quot;PERS&quot;
+## &quot;*PHI&quot;
+## &quot;POLI&quot;
+## &quot;PORT&quot;
+## &quot;PTUN&quot;
+## &quot;*PUN&quot;
+## &quot;*ROM&quot;
+## &quot;*RUS&quot;
+## &quot;RUSS&quot;
+## &quot;SERB&quot;
+## &quot;**SH&quot;
+## &quot;SOMA&quot;
+## &quot;*SPA&quot;
+## &quot;SPAN&quot;
+## &quot;** T&quot;
+## &quot;TAGA&quot;
+## &quot;*TAM&quot;
+## &quot;*TEL&quot;
+## &quot;THAI&quot;
+## &quot;**TO&quot;
+## &quot;*TOI&quot;
+## &quot;*TOY&quot;
+## &quot;TURK&quot;
+## &quot;*URD&quot;
+## &quot;URDU&quot;
+## &quot;VIET&quot;
+## &quot;*YID&quot;
+## &quot;*YOR&quot;
+## 
+## &quot;7TH DAY ADVENTIST&quot;
+## &quot;BAPTIST&quot;
+## &quot;BUDDHIST&quot;
+## &quot;CATHOLIC&quot;
+## &quot;CHRISTIAN SCIENTIST&quot;
+## &quot;EPISCOPALIAN&quot;
+## &quot;GREEK ORTHODOX&quot;
+## &quot;HEBREW&quot;
+## &quot;HINDU&quot;
+## &quot;JEHOVAH'S WITNESS&quot;
+## &quot;JEWISH&quot;
+## &quot;LUTHERAN&quot;
+## &quot;METHODIST&quot;
+## &quot;MUSLIM&quot;
+## &quot;NOT SPECIFIED&quot;
+## &quot;OTHER&quot;
+## &quot;PROTESTANT QUAKER&quot;
+## &quot;RELIGION&quot;
+## &quot;ROMANIAN EAST. ORTH&quot;
+## &quot;UNITARIAN-UNIVERSALIST&quot;
+## &quot;UNOBTAINABLE&quot;
+## 
+## &quot;DIVORCED&quot;
+## &quot;LIFE PARTNER&quot;
+## &quot;MARITAL_STATUS&quot;
+## &quot;MARRIED&quot;
+## &quot;SEPARATED&quot;
+## &quot;SINGLE&quot;
+## &quot;UNKNOWN (DEFAULT)&quot;
+## &quot;WIDOWED&quot;
+## &quot;AMERICAN INDIAN/ALASKA NATIVE&quot;
+## &quot;AMERICAN INDIAN/ALASKA NATIVE FEDERALLY RECOGNIZED TRIBE&quot;
+## &quot;ASIAN&quot;
+## &quot;ASIAN - ASIAN INDIAN&quot;
+## &quot;ASIAN - CAMBODIAN&quot;
+## &quot;ASIAN - CHINESE&quot;
+## &quot;ASIAN - FILIPINO&quot;
+## &quot;ASIAN - JAPANESE&quot;
+## &quot;ASIAN - KOREAN&quot;
+## &quot;ASIAN - OTHER&quot;
+## &quot;ASIAN - THAI&quot;
+## &quot;ASIAN - VIETNAMESE&quot;
+## &quot;BLACK/AFRICAN&quot;
+## &quot;BLACK/AFRICAN AMERICAN&quot;
+## &quot;BLACK/CAPE VERDEAN&quot;
+## &quot;BLACK/HAITIAN&quot;
+## &quot;CARIBBEAN ISLAND&quot;
+## &quot;ETHNICITY&quot;
+## &quot;HISPANIC/LATINO - CENTRAL AMERICAN (OTHER)&quot;
+## &quot;HISPANIC/LATINO - COLOMBIAN&quot;
+## &quot;HISPANIC/LATINO - CUBAN&quot;
+## &quot;HISPANIC/LATINO - DOMINICAN&quot;
+## &quot;HISPANIC/LATINO - GUATEMALAN&quot;
+## &quot;HISPANIC/LATINO - HONDURAN&quot;
+## &quot;HISPANIC/LATINO - MEXICAN&quot;
+## &quot;HISPANIC/LATINO - PUERTO RICAN&quot;
+## &quot;HISPANIC/LATINO - SALVADORAN&quot;
+## &quot;HISPANIC OR LATINO&quot;
+## &quot;MIDDLE EASTERN&quot;
+## &quot;MULTI RACE ETHNICITY&quot;
+## &quot;NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER&quot;
+## &quot;OTHER&quot;
+## &quot;PATIENT DECLINED TO ANSWER&quot;
+## &quot;PORTUGUESE&quot;
+## &quot;SOUTH AMERICAN&quot;
+## &quot;UNABLE TO OBTAIN&quot;
+## &quot;UNKNOWN/NOT SPECIFIED&quot;
+## &quot;WHITE&quot;
+## &quot;WHITE - BRAZILIAN&quot;
+## &quot;WHITE - EASTERN EUROPEAN&quot;
+## &quot;WHITE - OTHER EUROPEAN&quot;
+## &quot;WHITE - RUSSIAN&quot;</code></pre>
+<p><strong>Solution:</strong> Let’s display the number of unique patients that are Hispanic</p>
+<pre class="bash"><code>grep 'HISPANIC' /home/203bdata/mimic-iii/ADMISSIONS.csv | awk -F, '{ print $2 }' | sort | uniq | wc -l</code></pre>
+<pre><code>## 1652</code></pre>
 </div>
 <div id="q3.-more-fun-with-shell" class="section level2">
 <h2>Q3. More fun with shell</h2>
@@ -495,6 +668,17 @@ for datafile in /home/203bdata/mimic-iii/*.csv
 <li><p>You and your friend just have finished reading <em>Pride and Prejudice</em> by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <a href="http://www.gutenberg.org/cache/epub/42671/pg42671.txt" class="uri">http://www.gutenberg.org/cache/epub/42671/pg42671.txt</a> and save to your local folder.</p>
 <pre class="bash"><code>curl http://www.gutenberg.org/cache/epub/42671/pg42671.txt &gt; pride_and_prejudice.txt</code></pre>
 <p>Do <strong>not</strong> put this text file <code>pride_and_prejudice.txt</code> in Git. Using a <code>for</code> loop, how would you tabulate the number of times each of the four characters is mentioned?</p></li>
+</ol>
+<p><strong>Solution:</strong> Let’s display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively <!-- how to get the names displayed next to the number, do not add to git will this be reproducible --></p>
+<pre class="bash"><code>for name in Elizabeth Jane Lydia Darcy
+      do
+        grep $name pride_and_prejudice.txt | wc -l
+      done</code></pre>
+<pre><code>## 633
+## 290
+## 166
+## 414</code></pre>
+<ol start="0" style="list-style-type: decimal">
 <li><p>What’s the difference between the following two commands?</p>
 <pre class="bash"><code>echo 'hello, world' &gt; test1.txt</code></pre>
 <p>and</p>

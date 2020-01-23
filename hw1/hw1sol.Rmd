@@ -89,12 +89,18 @@ awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | w
 
 **Solution:** Let's display the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`
 
+<!-- identify column with name instead of number? -->
 ```{bash}
 awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $13 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+```
+
+**Solution:** Let's display the number of unique patients that are Hispanic 
+```{bash}
+grep 'HISPANIC' /home/203bdata/mimic-iii/ADMISSIONS.csv | awk -F, '{ print $2 }' | sort | uniq | wc -l
 ```
 
 
@@ -105,6 +111,15 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
     curl http://www.gutenberg.org/cache/epub/42671/pg42671.txt > pride_and_prejudice.txt
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
+
+**Solution:** Let's display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively <!-- how to get the names displayed next to the number, do not add to git will this be reproducible --> 
+```{bash}
+for name in Elizabeth Jane Lydia Darcy
+      do
+        grep $name pride_and_prejudice.txt | wc -l
+      done
+```
+
 
 0. What's the difference between the following two commands?
     ```{bash eval=FALSE}
