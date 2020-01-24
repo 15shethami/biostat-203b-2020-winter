@@ -87,7 +87,7 @@ awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | w
 ```
 
 **Solution:** Let's display the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`
-
+<!-- separate later for better format --> 
 ```{bash}
 awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
@@ -162,6 +162,7 @@ and run the code
 
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
 
+<!-- complete explanation -->
 **Solution:** 1 is the filename, tells us to run head on the pride and prejudice text, 2 is the argument that tells us how many lines to head, 3 tells us how many lines to display from the bottom of `heads` output; the first line tell us which shell to run the `middle.sh` file in 
 
 ## Q4. R Batch Run
@@ -186,7 +187,7 @@ cat runSim.R
 cat autoSim.R
 ```
 
-Let's output the file from the simulations with combinations of sample sizes and distributions
+Let's output the file from the simulations with different combinations of sample sizes and distributions
 ```{bash}
 Rscript autoSim.R seed=203 rep=50
 ```
@@ -194,17 +195,12 @@ Rscript autoSim.R seed=203 rep=50
 
 3. Write an R script to collect simulation results from output files and print average MSEs in a table of format
 
-```{r message=FALSE}
-#library("tidyverse")
-read_delim("n100_dist_gaussian.txt", delim = " ", col_names = F, col_types = cols())
-read_csv("n100_dist_gaussian.txt", col_names = F, col_types = cols())
-simulations
-file_list <- list.files(path=".", pattern="*.txt") 
-simulations<- file_list[1:15]
-read_csv(simulations, col_names = F, col_types = cols())
-datalist = lapply(simulations, function(x)(read_csv(x, col_names = F, col_types = cols())))
-do.call("rbind", datalist) 
+**Solution:** Let's display the simulation results from the output files and print average MSEs into the following table 
+
+```{bash}
+Rscript MSE_table_script.R
 ```
+
 
 
 | $n$ | Method   | Gaussian | $t_5$ | $t_1$ |

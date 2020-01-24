@@ -48,5 +48,4 @@ mse_prime_avg <- sum(mean_prime_est^2) / rep
 mse_samp_avg <- sum(mean_samp_est^2) / rep
 
 ## print values
-mse_prime_avg
-mse_samp_avg
+cat(mse_prime_avg,"\n",mse_samp_avg)
