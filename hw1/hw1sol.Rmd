@@ -115,7 +115,7 @@ Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` lo
 for name in Elizabeth Jane Lydia Darcy
       do
         echo $name
-        grep $name pride_and_prejudice.txt | wc -l
+        grep -o -i $name pride_and_prejudice.txt | wc -l
       done
 ```
 
@@ -174,15 +174,38 @@ $$
 $$
 for both methods.
 
-**Solution:** 
+**Solution:** This is my expanded `runSim.R` script
 ```{bash}
-
-Rscript runSim.R seed=203 n=100 dist=\"gaussian\" rep=50
+cat runSim.R
 ```
 
 2. Modify the [`autoSim.R`](https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R) script to run simulations with combinations of sample sizes `nVals = seq(100, 500, by=100)` and distributions `distTypes = c("gaussian", "t1", "t5")` and write output to appropriately named files. Use `rep = 50`, and `seed = 203`. 
 
+**Solution:** This is my modified `autoSim.R` script 
+```{bash}
+cat autoSim.R
+```
+
+Let's output the file from the simulations with combinations of sample sizes and distributions
+```{bash}
+Rscript autoSim.R seed=203 rep=50
+```
+
+
 3. Write an R script to collect simulation results from output files and print average MSEs in a table of format
+
+```{r message=FALSE}
+#library("tidyverse")
+read_delim("n100_dist_gaussian.txt", delim = " ", col_names = F, col_types = cols())
+read_csv("n100_dist_gaussian.txt", col_names = F, col_types = cols())
+simulations
+file_list <- list.files(path=".", pattern="*.txt") 
+simulations<- file_list[1:15]
+read_csv(simulations, col_names = F, col_types = cols())
+datalist = lapply(simulations, function(x)(read_csv(x, col_names = F, col_types = cols())))
+do.call("rbind", datalist) 
+```
+
 
 | $n$ | Method   | Gaussian | $t_5$ | $t_1$ |
 |-----|----------|-------|-------|----------|
