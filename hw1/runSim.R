@@ -1,10 +1,10 @@
 
-## parsing command arguments
+## Parsing command arguments
 for (arg in commandArgs(TRUE)) {
   eval(parse(text = arg))
 }
 
-## check if a given integer is prime
+## Check if a given integer is prime
 isPrime <- function(n) {
   if (n <= 3) {
     return(TRUE)
@@ -15,7 +15,7 @@ isPrime <- function(n) {
   return(TRUE)
 }
 
-## estimate mean only using observation with prime indices
+## Estimate mean only using observation with prime indices
 estMeanPrimes <- function(x) {
   n <- length(x)
   ind <- sapply(1:n, isPrime)
@@ -27,7 +27,7 @@ mean_prime_est <- 0
 mean_samp_est <- 0
 
 for (i in 1:rep) {
-  ## simulate data
+  ## Simulate data
   if (dist == "gaussian") {
     x <- rnorm(n)
   } else if (dist == "t1") {
@@ -38,14 +38,14 @@ for (i in 1:rep) {
     stop("Distribution Not Recognized")
   }
 
-  ## mean estimate for both methods
+  ## Mean estimate for both methods
   mean_prime_est[i] <- estMeanPrimes(x)
   mean_samp_est[i] <- mean(x)
 }
 
-## MSE formula give that true mean = 0
+## MSE formula given that true mean = 0
 mse_prime_avg <- sum(mean_prime_est^2) / rep
 mse_samp_avg <- sum(mean_samp_est^2) / rep
 
-## print values
-cat(mse_prime_avg,"\n",mse_samp_avg)
+## Display values
+cat(mse_prime_avg, "\n", mse_samp_avg)
