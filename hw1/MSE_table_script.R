@@ -1,5 +1,7 @@
-
+#install.packages("knitr")
 library(tidyverse)
+library(formattable)
+library(knitr)
 
 ## Separate files into specific classifications
 file_list <- list.files(pattern = "\\<n")
@@ -38,4 +40,4 @@ t5 <- unlist(t5_list, use.names = F)
 n <- rep((nVals), each = 2)
 Method <- rep(c("PrimeAvg", "SampAvg"), length(gauss_list))
 results <- tibble(n, Method, Gaussian, t5, t1)
-print(results)
+kable(results)

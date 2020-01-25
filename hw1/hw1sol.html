@@ -468,13 +468,39 @@ for datafile in /home/203bdata/mimic-iii/*.csv
 ## /home/203bdata/mimic-iii/TRANSFERS.csv
 ```</code></pre>
 <p>Display the number of lines in each <code>csv</code> file.</p>
-<p><strong>Solution:</strong> Let’s display the number of lines in each <code>csv</code> file <!-- UNDO LATER BUT TAKING A LONG TIME TO RUN --></p>
+<p><strong>Solution:</strong> Let’s display the number of lines in each <code>csv</code> file.</p>
 <pre class="bash"><code> for datafile in /home/203bdata/mimic-iii/*.csv
   do
    wc -l $datafile
   done </code></pre>
+<pre><code>## 58977 /home/203bdata/mimic-iii/ADMISSIONS.csv
+## 34500 /home/203bdata/mimic-iii/CALLOUT.csv
+## 7568 /home/203bdata/mimic-iii/CAREGIVERS.csv
+## 1048575 /home/203bdata/mimic-iii/CHARTEVENTS.csv
+## 573147 /home/203bdata/mimic-iii/CPTEVENTS.csv
+## 4485938 /home/203bdata/mimic-iii/DATETIMEEVENTS.csv
+## 135 /home/203bdata/mimic-iii/D_CPT.csv
+## 651048 /home/203bdata/mimic-iii/DIAGNOSES_ICD.csv
+## 14568 /home/203bdata/mimic-iii/D_ICD_DIAGNOSES.csv
+## 3883 /home/203bdata/mimic-iii/D_ICD_PROCEDURES.csv
+## 12488 /home/203bdata/mimic-iii/D_ITEMS.csv
+## 754 /home/203bdata/mimic-iii/D_LABITEMS.csv
+## 125558 /home/203bdata/mimic-iii/DRGCODES.csv
+## 61533 /home/203bdata/mimic-iii/ICUSTAYS.csv
+## 17527936 /home/203bdata/mimic-iii/INPUTEVENTS_CV.csv
+## 3618992 /home/203bdata/mimic-iii/INPUTEVENTS_MV.csv
+## 27854056 /home/203bdata/mimic-iii/LABEVENTS.csv
+## 631727 /home/203bdata/mimic-iii/MICROBIOLOGYEVENTS.csv
+## 91691299 /home/203bdata/mimic-iii/NOTEEVENTS.csv
+## 4349219 /home/203bdata/mimic-iii/OUTPUTEVENTS.csv
+## 46521 /home/203bdata/mimic-iii/PATIENTS.csv
+## 4156451 /home/203bdata/mimic-iii/PRESCRIPTIONS.csv
+## 258067 /home/203bdata/mimic-iii/PROCEDUREEVENTS_MV.csv
+## 240096 /home/203bdata/mimic-iii/PROCEDURES_ICD.csv
+## 73344 /home/203bdata/mimic-iii/SERVICES.csv
+## 261898 /home/203bdata/mimic-iii/TRANSFERS.csv</code></pre>
 <ol start="4" style="list-style-type: decimal">
-<li>Display the first few lines of <code>ADMISSIONS.csv</code>. How many rows are in this data file? How many unique patients (identified by <code>SUBJECT_ID</code>) are in this data file? What are the possible values taken by each of the variable <code>INSURANCE</code>, <code>LANGUAGE</code>, <code>RELIGION</code>, <code>MARITAL_STATUS</code>, and <code>ETHNICITY</code>? How many (unique) patients are Hispanic? (Hint: combine Linux comamnds <code>head</code>, <code>tail</code>, <code>awk</code>, <code>uniq</code>, <code>wc</code>, <code>sort</code> and so on using pipe.)</li>
+<li>Display the first few lines of <code>ADMISSIONS.csv</code>. How many rows are in this data file? How many unique patients (identified by <code>SUBJECT_ID</code>) are in this data file? What are the possible values taken by each of the variable <code>INSURANCE</code>, <code>LANGUAGE</code>, <code>RELIGION</code>, <code>MARITAL_STATUS</code>, and <code>ETHNICITY</code>? How many (unique) patients are Hispanic? (Hint: combine Linux commands <code>head</code>, <code>tail</code>, <code>awk</code>, <code>uniq</code>, <code>wc</code>, <code>sort</code> and so on using pipe.)</li>
 </ol>
 <p><strong>Solution:</strong> Let’s display first 10 lines of <code>ADMISSIONS.csv</code></p>
 <pre class="bash"><code>head /home/203bdata/mimic-iii/ADMISSIONS.csv</code></pre>
@@ -488,25 +514,28 @@ for datafile in /home/203bdata/mimic-iii/*.csv
 ## 27,27,134931,2191-11-30 22:16:00,2191-12-03 14:45:00,,&quot;NEWBORN&quot;,&quot;PHYS REFERRAL/NORMAL DELI&quot;,&quot;HOME&quot;,&quot;Private&quot;,,&quot;CATHOLIC&quot;,,&quot;WHITE&quot;,,,&quot;NEWBORN&quot;,0,1
 ## 28,28,162569,2177-09-01 07:15:00,2177-09-06 16:00:00,,&quot;ELECTIVE&quot;,&quot;PHYS REFERRAL/NORMAL DELI&quot;,&quot;HOME HEALTH CARE&quot;,&quot;Medicare&quot;,,&quot;CATHOLIC&quot;,&quot;MARRIED&quot;,&quot;WHITE&quot;,,,&quot;CORONARY ARTERY DISEASE\CORONARY ARTERY BYPASS GRAFT/SDA&quot;,0,1
 ## 29,30,104557,2172-10-14 14:17:00,2172-10-19 14:37:00,,&quot;URGENT&quot;,&quot;TRANSFER FROM HOSP/EXTRAM&quot;,&quot;HOME HEALTH CARE&quot;,&quot;Medicare&quot;,,&quot;CATHOLIC&quot;,&quot;MARRIED&quot;,&quot;UNKNOWN/NOT SPECIFIED&quot;,,,&quot;UNSTABLE ANGINA\CATH&quot;,0,1</code></pre>
-<p><strong>Solution:</strong> Let’s display the number of rows in this data file</p>
+<p><strong>Solution:</strong> The number of rows in this data file is</p>
 <pre class="bash"><code>awk 'END { print NR }' /home/203bdata/mimic-iii/ADMISSIONS.csv</code></pre>
 <pre><code>## 58977</code></pre>
 <p><strong>Solution:</strong> Let’s display the number of unique patients (identified by <code>SUBJECT_ID</code>) in this data file</p>
 <pre class="bash"><code>awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | wc -l</code></pre>
 <pre><code>## 46521</code></pre>
-<p><strong>Solution:</strong> Let’s display the possible values taken by each of the variable <code>INSURANCE</code>, <code>LANGUAGE</code>, <code>RELIGION</code>, <code>MARITAL_STATUS</code>, and <code>ETHNICITY</code></p>
-<pre class="bash"><code>awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
-awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
-awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
-awk -F, '{ print $13 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
-awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
+<p><strong>Solution:</strong> Let’s display the possible values taken by each of the variable</p>
+<ul>
+<li><code>INSURANCE</code></li>
+</ul>
+<pre class="bash"><code>awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
 <pre><code>## &quot;Government&quot;
 ## &quot;INSURANCE&quot;
 ## &quot;Medicaid&quot;
 ## &quot;Medicare&quot;
 ## &quot;Private&quot;
-## &quot;Self Pay&quot;
-## 
+## &quot;Self Pay&quot;</code></pre>
+<ul>
+<li><code>LANGUAGE</code></li>
+</ul>
+<pre class="bash"><code>awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
+<pre><code>## 
 ## &quot;ALBA&quot;
 ## &quot;AMER&quot;
 ## &quot;*AMH&quot;
@@ -582,8 +611,12 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 ## &quot;URDU&quot;
 ## &quot;VIET&quot;
 ## &quot;*YID&quot;
-## &quot;*YOR&quot;
-## 
+## &quot;*YOR&quot;</code></pre>
+<ul>
+<li><code>RELIGION</code></li>
+</ul>
+<pre class="bash"><code>awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
+<pre><code>## 
 ## &quot;7TH DAY ADVENTIST&quot;
 ## &quot;BAPTIST&quot;
 ## &quot;BUDDHIST&quot;
@@ -604,8 +637,12 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 ## &quot;RELIGION&quot;
 ## &quot;ROMANIAN EAST. ORTH&quot;
 ## &quot;UNITARIAN-UNIVERSALIST&quot;
-## &quot;UNOBTAINABLE&quot;
-## 
+## &quot;UNOBTAINABLE&quot;</code></pre>
+<ul>
+<li><code>MARITAL_STATUS</code></li>
+</ul>
+<pre class="bash"><code>awk -F, '{ print $13 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
+<pre><code>## 
 ## &quot;DIVORCED&quot;
 ## &quot;LIFE PARTNER&quot;
 ## &quot;MARITAL_STATUS&quot;
@@ -613,8 +650,12 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 ## &quot;SEPARATED&quot;
 ## &quot;SINGLE&quot;
 ## &quot;UNKNOWN (DEFAULT)&quot;
-## &quot;WIDOWED&quot;
-## &quot;AMERICAN INDIAN/ALASKA NATIVE&quot;
+## &quot;WIDOWED&quot;</code></pre>
+<ul>
+<li><code>ETHNICITY</code></li>
+</ul>
+<pre class="bash"><code>awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</code></pre>
+<pre><code>## &quot;AMERICAN INDIAN/ALASKA NATIVE&quot;
 ## &quot;AMERICAN INDIAN/ALASKA NATIVE FEDERALLY RECOGNIZED TRIBE&quot;
 ## &quot;ASIAN&quot;
 ## &quot;ASIAN - ASIAN INDIAN&quot;
@@ -665,30 +706,36 @@ awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq</c
 <ol style="list-style-type: decimal">
 <li><p>You and your friend just have finished reading <em>Pride and Prejudice</em> by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <a href="http://www.gutenberg.org/cache/epub/42671/pg42671.txt" class="uri">http://www.gutenberg.org/cache/epub/42671/pg42671.txt</a> and save to your local folder.</p>
 <pre class="bash"><code>curl http://www.gutenberg.org/cache/epub/42671/pg42671.txt &gt; pride_and_prejudice.txt</code></pre>
+<pre><code>##   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+##                                  Dload  Upload   Total   Spent    Left  Speed
+## 
+ 0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+47  708k   47  334k    0     0   330k      0  0:00:02  0:00:01  0:00:01  331k
+100  708k  100  708k    0     0   536k      0  0:00:01  0:00:01 --:--:--  536k</code></pre>
 <p>Do <strong>not</strong> put this text file <code>pride_and_prejudice.txt</code> in Git. Using a <code>for</code> loop, how would you tabulate the number of times each of the four characters is mentioned?</p></li>
 </ol>
 <p><strong>Solution:</strong> Let’s display the number of times each of the four characters (Elizabeth, Jane, Lydia, and Darcy) is mentioned respectively</p>
 <pre class="bash"><code>for name in Elizabeth Jane Lydia Darcy
       do
         echo $name
-        grep $name pride_and_prejudice.txt | wc -l
+        grep -o -i $name pride_and_prejudice.txt | wc -l
       done</code></pre>
 <pre><code>## Elizabeth
-## 633
+## 634
 ## Jane
-## 290
+## 294
 ## Lydia
-## 166
+## 171
 ## Darcy
-## 414</code></pre>
-<ol start="0" style="list-style-type: decimal">
+## 418</code></pre>
+<ol start="2" style="list-style-type: decimal">
 <li><p>What’s the difference between the following two commands?</p>
 <pre class="bash"><code>echo 'hello, world' &gt; test1.txt</code></pre>
 <p>and</p>
 <pre class="bash"><code>echo 'hello, world' &gt;&gt; test2.txt</code></pre></li>
 </ol>
-<p><strong>Solution:</strong> The first command directs output from one command to a file, so ‘hello, world’ is copied into a new script. The second command appends output from one command to a file, so ‘hello, world’ could be added to a new or previously existing script. Since ‘hello, world’ is appended to an empty script, the output from the first and second command appear to be the same.</p>
-<ol start="0" style="list-style-type: decimal">
+<p><strong>Solution:</strong> The first command directs output from one command to a file, so <em>hello, world</em> is copied into a new script or overwrites a previously existing script. The second command appends output from one command to a file, so <em>hello, world</em> could be added to a new or previously existing script. Since <em>hello, world</em> is appended to an empty script, the output from the first and second command appear to be the same.</p>
+<ol start="3" style="list-style-type: decimal">
 <li><p>Using your favorite text editor (e.g., <code>vi</code>), type the following and save the file as <code>middle.sh</code>:</p>
 <pre class="bash"><code>#!/bin/sh
 # Select lines from the middle of a file.
@@ -704,15 +751,14 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre></li>
 <p><strong>Solution:</strong> Let’s make the file executable by the owner</p>
 <pre class="bash"><code>chmod 764 middle.sh </code></pre>
 <p>and run the code</p>
-<pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5
-#head -n 20 pride_and_prejudice.txt | tail -n 5</code></pre>
+<pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5</code></pre>
 <pre><code>## 
 ## Author: Jane Austen
 ## 
 ## Editor: R. W. (Robert William) Chapman
 ## </code></pre>
 <p>Explain the output. Explain the meaning of <code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> in this shell script. Why do we need the first line of the shell script?</p>
-<p><strong>Solution:</strong> 1 is the filename, tells us to run head on the pride and prejudice text, 2 is the argument that tells us how many lines to head, 3 tells us how many lines to display from the bottom of <code>heads</code> output; the first line tell us which shell to run the <code>middle.sh</code> file in</p>
+<p><strong>Solution:</strong> The output from the above code displays lines 15-20 of the <em>Pride and Prejudice</em> text and is similar to running the code <code>head -n 20 pride_and_prejudice.txt | tail -n 5</code>. Therefore, the <code>&quot;$1&quot;</code> represents the filename on which <code>head</code> is executed, the <code>&quot;$2&quot;</code> represents how many lines to <code>head</code>, and <code>&quot;$3&quot;</code> represents the number of lines to display from the bottom of the <code>head's</code> output. We need the first line of the shell script because it tells which shell to run the <code>middle.sh</code> file in.</p>
 </div>
 <div id="q4.-r-batch-run" class="section level2">
 <h2>Q4. R Batch Run</h2>
@@ -722,15 +768,177 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre></li>
   \frac{\sum_{r=1}^{\text{rep}} (\widehat \mu_r - \mu_{\text{true}})^2}{\text{rep}}
 \]</span> for both methods.</li>
 </ol>
-<p><strong>Solution:</strong></p>
-<pre class="bash"><code>
-Rscript runSim.R seed=203 n=100 dist=\&quot;gaussian\&quot; rep=50</code></pre>
-<pre><code>## [1] 0.03926458
-## [1] 0.01146443</code></pre>
+<p><strong>Solution:</strong> This is my expanded <code>runSim.R</code> script</p>
+<pre class="bash"><code>cat runSim.R</code></pre>
+<pre><code>## 
+## ## Parsing command arguments
+## for (arg in commandArgs(TRUE)) {
+##   eval(parse(text = arg))
+## }
+## 
+## ## Check if a given integer is prime
+## isPrime &lt;- function(n) {
+##   if (n &lt;= 3) {
+##     return(TRUE)
+##   }
+##   if (any((n %% 2:floor(sqrt(n))) == 0)) {
+##     return(FALSE)
+##   }
+##   return(TRUE)
+## }
+## 
+## ## Estimate mean only using observation with prime indices
+## estMeanPrimes &lt;- function(x) {
+##   n &lt;- length(x)
+##   ind &lt;- sapply(1:n, isPrime)
+##   return(mean(x[ind]))
+## }
+## 
+## set.seed(seed)
+## mean_prime_est &lt;- 0
+## mean_samp_est &lt;- 0
+## 
+## for (i in 1:rep) {
+##   ## Simulate data
+##   if (dist == &quot;gaussian&quot;) {
+##     x &lt;- rnorm(n)
+##   } else if (dist == &quot;t1&quot;) {
+##     x &lt;- rt(n, 1)
+##   } else if (dist == &quot;t5&quot;) {
+##     x &lt;- rt(n, 5)
+##   } else {
+##     stop(&quot;Distribution Not Recognized&quot;)
+##   }
+## 
+##   ## Mean estimate for both methods
+##   mean_prime_est[i] &lt;- estMeanPrimes(x)
+##   mean_samp_est[i] &lt;- mean(x)
+## }
+## 
+## ## MSE formula given that true mean = 0
+## mse_prime_avg &lt;- sum(mean_prime_est^2) / rep
+## mse_samp_avg &lt;- sum(mean_samp_est^2) / rep
+## 
+## ## Display values
+## cat(mse_prime_avg, &quot;\n&quot;, mse_samp_avg)</code></pre>
 <ol start="2" style="list-style-type: decimal">
-<li><p>Modify the <a href="https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R"><code>autoSim.R</code></a> script to run simulations with combinations of sample sizes <code>nVals = seq(100, 500, by=100)</code> and distributions <code>distTypes = c(&quot;gaussian&quot;, &quot;t1&quot;, &quot;t5&quot;)</code> and write output to appropriately named files. Use <code>rep = 50</code>, and <code>seed = 203</code>.</p></li>
-<li><p>Write an R script to collect simulation results from output files and print average MSEs in a table of format</p></li>
+<li>Modify the <a href="https://ucla-biostat203b-2020winter.github.io/slides/02-linux/autoSim.R"><code>autoSim.R</code></a> script to run simulations with combinations of sample sizes <code>nVals = seq(100, 500, by=100)</code> and distributions <code>distTypes = c(&quot;gaussian&quot;, &quot;t1&quot;, &quot;t5&quot;)</code> and write output to appropriately named files. Use <code>rep = 50</code>, and <code>seed = 203</code>.</li>
 </ol>
+<p><strong>Solution:</strong> This is my modified <code>autoSim.R</code> script</p>
+<pre class="bash"><code>cat autoSim.R</code></pre>
+<pre><code>## # autoSim.R
+## 
+## ## Parsing command arguments
+## for (arg in commandArgs(TRUE)) {
+##   eval(parse(text = arg))
+## }
+## 
+## ## Combinations of sample size and distribution
+## nVals &lt;- seq(100, 500, by = 100)
+## distTypes &lt;- c(&quot;gaussian&quot;, &quot;t1&quot;, &quot;t5&quot;)
+## 
+## ## Create files from the runSim.R output
+## for (dist in distTypes) {
+##   for (n in nVals) {
+##     oFile &lt;- paste(&quot;n&quot;, n, &quot;_dist_&quot;, dist, &quot;.txt&quot;, sep = &quot;&quot;)
+##     arg &lt;- paste(&quot;n=&quot;, n, &quot; dist=&quot;, shQuote(shQuote(dist)),
+##       &quot; seed=&quot;, seed, &quot; rep=&quot;, rep,
+##       sep = &quot;&quot;
+##     )
+##     sysCall &lt;- paste(&quot;nohup Rscript runSim.R &quot;, arg, &quot; &gt; &quot;, oFile, sep = &quot;&quot;)
+##     system(sysCall)
+##     print(paste(&quot;sysCall=&quot;, sysCall, sep = &quot;&quot;))
+##   }
+## }</code></pre>
+<p>Let’s output the file from the simulations with different combinations of sample sizes and distributions</p>
+<pre class="bash"><code>Rscript autoSim.R seed=203 rep=50</code></pre>
+<pre><code>## [1] &quot;sysCall=nohup Rscript runSim.R n=100 dist=\&quot;'gaussian'\&quot; seed=203 rep=50 &gt; n100_dist_gaussian.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=200 dist=\&quot;'gaussian'\&quot; seed=203 rep=50 &gt; n200_dist_gaussian.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=300 dist=\&quot;'gaussian'\&quot; seed=203 rep=50 &gt; n300_dist_gaussian.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=400 dist=\&quot;'gaussian'\&quot; seed=203 rep=50 &gt; n400_dist_gaussian.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=500 dist=\&quot;'gaussian'\&quot; seed=203 rep=50 &gt; n500_dist_gaussian.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=100 dist=\&quot;'t1'\&quot; seed=203 rep=50 &gt; n100_dist_t1.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=200 dist=\&quot;'t1'\&quot; seed=203 rep=50 &gt; n200_dist_t1.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=300 dist=\&quot;'t1'\&quot; seed=203 rep=50 &gt; n300_dist_t1.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=400 dist=\&quot;'t1'\&quot; seed=203 rep=50 &gt; n400_dist_t1.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=500 dist=\&quot;'t1'\&quot; seed=203 rep=50 &gt; n500_dist_t1.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=100 dist=\&quot;'t5'\&quot; seed=203 rep=50 &gt; n100_dist_t5.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=200 dist=\&quot;'t5'\&quot; seed=203 rep=50 &gt; n200_dist_t5.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=300 dist=\&quot;'t5'\&quot; seed=203 rep=50 &gt; n300_dist_t5.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=400 dist=\&quot;'t5'\&quot; seed=203 rep=50 &gt; n400_dist_t5.txt&quot;
+## [1] &quot;sysCall=nohup Rscript runSim.R n=500 dist=\&quot;'t5'\&quot; seed=203 rep=50 &gt; n500_dist_t5.txt&quot;</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Write an R script to collect simulation results from output files and print average MSEs in a table of format</li>
+</ol>
+<p><strong>Solution:</strong> This is my R script to collect results from output files</p>
+<pre class="bash"><code>cat MSE_table_script.R</code></pre>
+<pre><code>## #install.packages(&quot;knitr&quot;)
+## library(tidyverse)
+## library(formattable)
+## library(knitr)
+## 
+## ## Separate files into specific classifications
+## file_list &lt;- list.files(pattern = &quot;\\&lt;n&quot;)
+## gauss_files &lt;- str_subset(file_list, &quot;gaussian&quot;)
+## t1_files &lt;- str_subset(file_list, &quot;t1&quot;)
+## t5_files &lt;- str_subset(file_list, &quot;t5&quot;)
+## nVals &lt;- seq(100, 500, by = 100)
+## 
+## ## Create a function to read in txt files
+## read &lt;- function(x) {
+##   read_delim(x, delim = &quot;\n&quot;, col_names = F, col_types = cols())
+## }
+## 
+## ## Read in each distribution separately
+## gauss_list &lt;- NULL
+## for (file in gauss_files) {
+##   gauss_list[file] &lt;- read(file)
+## }
+## 
+## t1_list &lt;- NULL
+## for (file in t1_files) {
+##   t1_list[file] &lt;- read(file)
+## }
+## 
+## t5_list &lt;- NULL
+## for (file in t1_files) {
+##   t5_list[file] &lt;- read(file)
+## }
+## 
+## ## Convert lists into individuals elements
+## Gaussian &lt;- unlist(gauss_list, use.names = F)
+## t1 &lt;- unlist(t1_list, use.names = F)
+## t5 &lt;- unlist(t5_list, use.names = F)
+## 
+## ## Create table
+## n &lt;- rep((nVals), each = 2)
+## Method &lt;- rep(c(&quot;PrimeAvg&quot;, &quot;SampAvg&quot;), length(gauss_list))
+## results &lt;- tibble(n, Method, Gaussian, t5, t1)
+## kable(results)</code></pre>
+<p>Let’s display the simulation results from the output files and print average MSEs into the following table</p>
+<pre class="bash"><code>Rscript MSE_table_script.R</code></pre>
+<pre><code>## ── [1mAttaching packages[22m ───────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
+## [32m✓[39m [34mggplot2[39m 3.2.1     [32m✓[39m [34mpurrr  [39m 0.3.3
+## [32m✓[39m [34mtibble [39m 2.1.3     [32m✓[39m [34mdplyr  [39m 0.8.3
+## [32m✓[39m [34mtidyr  [39m 1.0.0     [32m✓[39m [34mstringr[39m 1.4.0
+## [32m✓[39m [34mreadr  [39m 1.3.1     [32m✓[39m [34mforcats[39m 0.4.0
+## ── [1mConflicts[22m ──────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## [31mx[39m [34mdplyr[39m::[32mfilter()[39m masks [34mstats[39m::filter()
+## [31mx[39m [34mdplyr[39m::[32mlag()[39m    masks [34mstats[39m::lag()
+## 
+## 
+## |   n|Method   |Gaussian    |t5       |t1       |
+## |---:|:--------|:-----------|:--------|:--------|
+## | 100|PrimeAvg |0.03926458  |43.72672 |43.72672 |
+## | 100|SampAvg  |0.01146443  |26.76927 |26.76927 |
+## | 200|PrimeAvg |0.02400161  |20.91532 |20.91532 |
+## | 200|SampAvg  |0.005764383 |43.41982 |43.41982 |
+## | 300|PrimeAvg |0.02051436  |116.3967 |116.3967 |
+## | 300|SampAvg  |0.004199221 |138.4565 |138.4565 |
+## | 400|PrimeAvg |0.013456    |48.29149 |48.29149 |
+## | 400|SampAvg  |0.002870221 |76.24066 |76.24066 |
+## | 500|PrimeAvg |0.009396678 |152.8085 |152.8085 |
+## | 500|SampAvg  |0.00219146  |53.4729  |53.4729  |</code></pre>
 <table>
 <thead>
 <tr class="header">

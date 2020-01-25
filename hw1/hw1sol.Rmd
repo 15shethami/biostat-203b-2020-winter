@@ -59,16 +59,15 @@ Please, do **not** put these data files into Git; they are big. Also do **not** 
 
 Display the number of lines in each `csv` file.
 
-**Solution:** Let's display the number of lines in each `csv` file
-<!-- UNDO LATER BUT TAKING A LONG TIME TO RUN -->
-```{bash, eval=FALSE}
+**Solution:** Let's display the number of lines in each `csv` file.
+```{bash}
  for datafile in /home/203bdata/mimic-iii/*.csv
   do
    wc -l $datafile
   done 
 ```
 
-4. Display the first few lines of `ADMISSIONS.csv`. How many rows are in this data file? How many unique patients (identified by `SUBJECT_ID`) are in this data file? What are the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`? How many (unique) patients are Hispanic? (Hint: combine Linux comamnds `head`, `tail`, `awk`, `uniq`, `wc`, `sort` and so on using pipe.)
+4. Display the first few lines of `ADMISSIONS.csv`. How many rows are in this data file? How many unique patients (identified by `SUBJECT_ID`) are in this data file? What are the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`? How many (unique) patients are Hispanic? (Hint: combine Linux commands `head`, `tail`, `awk`, `uniq`, `wc`, `sort` and so on using pipe.)
 
 **Solution:** Let's display first 10 lines of `ADMISSIONS.csv`
 
@@ -76,7 +75,7 @@ Display the number of lines in each `csv` file.
 head /home/203bdata/mimic-iii/ADMISSIONS.csv
 ```
 
-**Solution:** Let's display the number of rows in this data file
+**Solution:** The number of rows in this data file is 
 ```{bash}
 awk 'END { print NR }' /home/203bdata/mimic-iii/ADMISSIONS.csv
 ```
@@ -86,13 +85,30 @@ awk 'END { print NR }' /home/203bdata/mimic-iii/ADMISSIONS.csv
 awk -F, '{ print $2 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq | wc -l
 ```
 
-**Solution:** Let's display the possible values taken by each of the variable `INSURANCE`, `LANGUAGE`, `RELIGION`, `MARITAL_STATUS`, and `ETHNICITY`
-<!-- separate later for better format --> 
+**Solution:** Let's display the possible values taken by each of the variable 
+
+- `INSURANCE`
 ```{bash}
 awk -F, '{ print $10 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+```
+
+- `LANGUAGE`
+```{bash}
 awk -F, '{ print $11 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+```
+
+- `RELIGION`
+```{bash}
 awk -F, '{ print $12 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+```
+
+- `MARITAL_STATUS`
+```{bash}
 awk -F, '{ print $13 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
+```
+
+- `ETHNICITY`
+```{bash}
 awk -F, '{ print $14 }' /home/203bdata/mimic-iii/ADMISSIONS.csv | sort | uniq
 ```
 
@@ -105,7 +121,7 @@ grep 'HISPANIC' /home/203bdata/mimic-iii/ADMISSIONS.csv | awk -F, '{ print $2 }'
 ## Q3. More fun with shell
 
 1. You and your friend just have finished reading *Pride and Prejudice* by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <http://www.gutenberg.org/cache/epub/42671/pg42671.txt> and save to your local folder. 
-    ```{bash, eval=FALSE}
+    ```{bash}
     curl http://www.gutenberg.org/cache/epub/42671/pg42671.txt > pride_and_prejudice.txt
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
@@ -119,8 +135,7 @@ for name in Elizabeth Jane Lydia Darcy
       done
 ```
 
-
-0. What's the difference between the following two commands?
+2. What's the difference between the following two commands?
     ```{bash, eval=FALSE}
     echo 'hello, world' > test1.txt
     ```
@@ -129,9 +144,9 @@ for name in Elizabeth Jane Lydia Darcy
     echo 'hello, world' >> test2.txt
     ```
 
-**Solution:** The first command directs output from one command to a file, so 'hello, world' is copied into a new script. The second command appends output from one command to a file, so 'hello, world' could be added to a new or previously existing script. Since 'hello, world' is appended to an empty script, the output from the first and second command appear to be the same.
+**Solution:** The first command directs output from one command to a file, so *hello, world* is copied into a new script or overwrites a previously existing script. The second command appends output from one command to a file, so *hello, world* could be added to a new or previously existing script. Since *hello, world* is appended to an empty script, the output from the first and second command appear to be the same.
 
-0. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
+3. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
     ```{bash eval=FALSE}
     #!/bin/sh
     # Select lines from the middle of a file.
@@ -157,13 +172,11 @@ chmod 764 middle.sh
 and run the code
 ```{bash}
 ./middle.sh pride_and_prejudice.txt 20 5
-#head -n 20 pride_and_prejudice.txt | tail -n 5
 ```
 
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
 
-<!-- complete explanation -->
-**Solution:** 1 is the filename, tells us to run head on the pride and prejudice text, 2 is the argument that tells us how many lines to head, 3 tells us how many lines to display from the bottom of `heads` output; the first line tell us which shell to run the `middle.sh` file in 
+**Solution:** The output from the above code displays lines 15-20 of the *Pride and Prejudice* text and is similar to running the code `head -n 20 pride_and_prejudice.txt | tail -n 5`. Therefore, the `"$1"` represents the filename on which `head` is executed, the `"$2"` represents how many lines to `head`, and `"$3"` represents the number of lines to display from the bottom of the `head's` output. We need the first line of the shell script because it tells which shell to run the `middle.sh` file in.
 
 ## Q4. R Batch Run
 
@@ -195,7 +208,13 @@ Rscript autoSim.R seed=203 rep=50
 
 3. Write an R script to collect simulation results from output files and print average MSEs in a table of format
 
-**Solution:** Let's display the simulation results from the output files and print average MSEs into the following table 
+**Solution:** This is my R script to collect results from output files
+
+```{bash}
+cat MSE_table_script.R
+```
+
+Let's display the simulation results from the output files and print average MSEs into the following table 
 
 ```{bash}
 Rscript MSE_table_script.R
