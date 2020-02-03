@@ -19,7 +19,7 @@ Use tidyverse (ggpot2, dplyr) to explore the [MIMIC-III](https://mimic.physionet
 
 Demographic information of the patients admitted into hospital is available in `ADMISSION.csv`. See <https://mimic.physionet.org/mimictables/admissions/> for details of each field in this file. Summarize following variables using appropriate graphs:   
 
-  - admission year  
+- admission year  
 - admission month  
 - admission week day  
 - admission hour  
@@ -46,7 +46,7 @@ library(tidyverse)
 library(lubridate)
 ```
 
-## Import data
+### Import data
 Let's first display the first 10 lines of the `ADMISSION.csv` file:
 ```{bash}
 head /home/203bdata/mimic-iii/ADMISSIONS.csv
@@ -61,13 +61,53 @@ admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
                                        HADM_ID = col_integer(),
                                        HOSPITAL_EXPIRE_FLAG = col_logical(),
                                        HAS_CHARTEVENTS_DATA = col_logical()))
-
-admission %>% mutate(adm_year = year(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_year))
 ```
 12 years diluted over 100 years span, number of hospital admissions is around 600 x 10 = 6000 admissions per year, can identify which years with lots of admissions (maybe why?), here not seeing much pattern, maybe investigation around 2130
 
 86400 seconds = 1 year
 
+## Summarizing the Data 
+
+- admission year
+
+```{r}
+admission %>% mutate(adm_year = year(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_year)) + xlab("Year of Admission") + ggtitle("Barplot of Admission Year") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+- admission month
+
+```{r}
+admission %>% mutate(adm_month = month(ADMITTIME, label = T)) %>% ggplot() + geom_bar(mapping = aes(x = adm_month)) + xlab("Month of Admission") + ggtitle("Barplot of Admission Month") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+- admission week day
+
+```{r}
+admission %>% mutate(adm_day = day(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_day)) + xlab("Day of Admission") + ggtitle("Barplot of Admission Day") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+- admission hour
+
+```{r}
+admission %>% mutate(adm_hour = hour(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_hour)) + xlab("Hour of Admission") + ggtitle("Barplot of Admission Hour") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+- admission minute
+
+```{r}
+admission %>% mutate(adm_min = minute(ADMITTIME)) %>% ggplot() + geom_freqpoly(binwidth = 2, mapping = aes(x = adm_min)) + xlab("Minute of Admission") + ggtitle("Plot of Admission Minute") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+- length of hospital stay  
+- admission type  
+- number of admissions per patient  
+- admission location  
+- insurance  
+- language  
+- religion  
+- martial status  
+- ethnicity  
+- death 
 
 ## Q2
 
