@@ -3,6 +3,8 @@ title: "Biostat 203B Homework 2"
 author: "Ami Sheth"
 subtitle: Due Feb 7 @ 11:59PM
 output: html_document
+        toc: true
+        toc_depth: 4
 ---
 
 ```{r setup, include=FALSE}
@@ -127,9 +129,10 @@ admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(map
 - Language  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = LANGUAGE)) + ggtitle("Plot of Patient Language") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust = 1, size = 6))
+top_lang <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(LANGUAGE) %>% na.omit(LANGUAGE) %>% arrange(desc(n)) %>% slice(1:10)
 
-#scale_x_discrete(breaks = admission$LANGUAGE[!is.na(admission$LANGUAGE)])
+top_lang %>% ggplot(mapping = aes(x = LANGUAGE, y = n, fill = LANGUAGE)) + geom_bar(stat = "identity") + labs(title = "Top Ten Patient Languages", y = "Count", x = "Language") + theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+ 
 ```
 
 - Religion  
@@ -147,7 +150,10 @@ admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(map
 - Ethnicity  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = ETHNICITY)) + ggtitle("Plot of Patient Ethnicity") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 75, hjust = 1, size = 6)) + scale_x_discrete(drop = F)
+top_eth <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(ETHNICITY) %>% arrange(desc(n)) %>% slice(1:10)
+
+top_eth %>% ggplot(mapping = aes(x = ETHNICITY, y = n)) + geom_bar(stat = "identity") + ggtitle("Plot of Patient Ethnicity") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1, size = 6)) + scale_x_discrete(drop = F)
+
 ```
 
 - Death 
