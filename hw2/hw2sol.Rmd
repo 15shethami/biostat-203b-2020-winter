@@ -54,7 +54,6 @@ head /home/203bdata/mimic-iii/ADMISSIONS.csv
 
 First try of parsing the data:
 ```{r}
-admission %>% print(width = Inf)
 admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
                       col_types = cols(ROW_ID = col_integer(),
                                        SUBJECT_ID = col_integer(),
@@ -62,97 +61,96 @@ admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
                                        HOSPITAL_EXPIRE_FLAG = col_logical(),
                                        HAS_CHARTEVENTS_DATA = col_logical()))
 ```
-12 years diluted over 100 years span, number of hospital admissions is around 600 x 10 = 6000 admissions per year, can identify which years with lots of admissions (maybe why?), here not seeing much pattern, maybe investigation around 2130
-
-86400 seconds = 1 year
 
 ## Summarizing the Data 
 
-- admission year
+- Admission year
 
 ```{r}
 admission %>% mutate(adm_year = year(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_year)) + xlab("Year of Admission") + ggtitle("Barplot of Admission Year") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- admission month
+- Admission month
 
 ```{r}
 admission %>% mutate(adm_month = month(ADMITTIME, label = T)) %>% ggplot() + geom_bar(mapping = aes(x = adm_month)) + xlab("Month of Admission") + ggtitle("Barplot of Admission Month") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- admission week day
+- Admission week day
 
 ```{r}
 admission %>% mutate(adm_day = day(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_day)) + xlab("Day of Admission") + ggtitle("Barplot of Admission Day") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- admission hour
+- Admission hour
 
 ```{r}
 admission %>% mutate(adm_hour = hour(ADMITTIME)) %>% ggplot() + geom_bar(mapping = aes(x = adm_hour)) + xlab("Hour of Admission") + ggtitle("Barplot of Admission Hour") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- admission minute
+- Admission minute
 
 ```{r}
 admission %>% mutate(adm_min = minute(ADMITTIME)) %>% ggplot() + geom_freqpoly(binwidth = 2, mapping = aes(x = adm_min)) + xlab("Minute of Admission") + ggtitle("Plot of Admission Minute") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- length of hospital stay 
+- Length of hospital stay 
 
 ```{r}
 admission %>% mutate(stay_length = as.numeric(as.duration(DISCHTIME-ADMITTIME)/ 86400)) %>% ggplot() + geom_density(mapping = aes(x = stay_length)) + xlab("Length of Stay (days)") + ggtitle("Plot of Length of Hospital Stay") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- admission type  
+- Admission type  
 
 ```{r}
 admission %>% ggplot() + geom_bar(mapping = aes(x = ADMISSION_TYPE)) + xlab("Admission Type") + ggtitle("Barplot of Admission Type") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- number of admissions per patient  
+- Number of admissions per patient  
 
 ```{r}
 admission %>% count(SUBJECT_ID) %>% ggplot() + geom_bar(mapping = aes(x = n)) + xlab("Number of Admissions") + ggtitle("Frequency of Admissions per Patient") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- admission location  
+- Admission location  
 
 ```{r}
 admission %>% ggplot() + geom_bar(mapping = aes(x = ADMISSION_LOCATION)) + coord_flip() + xlab("Admission Location") + ggtitle("Barplot of Admission Location")
 ```
 
-- insurance  
+- Insurance  
 
 ```{r}
 admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = INSURANCE)) + ggtitle("Plot of Patient Insurance") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- language  
+- Language  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = LANGUAGE)) + ggtitle("Plot of Patient Language") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust = 1))
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = LANGUAGE)) + ggtitle("Plot of Patient Language") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust = 1, size = 6))
+
+#scale_x_discrete(breaks = admission$LANGUAGE[!is.na(admission$LANGUAGE)])
 ```
 
-- religion  
+- Religion  
 
 ```{r}
 admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = RELIGION)) + ggtitle("Plot of Patient Religion") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-- marital status 
+- Marital status 
 
 ```{r}
 admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = MARITAL_STATUS)) + ggtitle("Plot of Marital Status") + xlab("Marital Status") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-- ethnicity  
+- Ethnicity  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = ETHNICITY)) + ggtitle("Plot of Patient Ethnicity") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1))
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = ETHNICITY)) + ggtitle("Plot of Patient Ethnicity") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 75, hjust = 1, size = 6)) + scale_x_discrete(drop = F)
 ```
 
-- death 
+- Death 
 
 ```{r}
 admission %>% count(DEATHTIME)
@@ -165,6 +163,39 @@ Link the data in `ADMISSION.csv` and `PATIENTS.csv` (<https://mimic.physionet.or
 
 - gender  
 - age at admission 
+
+**Solution**
+
+First let's try to read and parse the `PATIENTS.csv` data.
+
+```{r}
+patient <- read_csv("/home/203bdata/mimic-iii/PATIENTS.csv",
+                    col_types = cols(ROW_ID = col_integer(),
+                                     SUBJECT_ID = col_integer(),
+                                     EXPIRE_FLAG = col_character()))
+                    
+```
+
+Let's merge the `ADMISSION.csv` and `PATIENTS.csv` together by `SUBJECT_ID`
+
+```{r}
+patient_adm <- inner_join(patient, admission, by = "SUBJECT_ID")
+```
+
+
+- Gender
+
+```{r}
+patient_adm %>% ggplot() + geom_bar(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1), stat = "count") + scale_x_discrete(label = c("Female", "Male")) + labs(title = "Gender of Patients", y = "Proportion", x = "Gender")
+```
+
+- Age at admission 
+
+```{r}
+patient_adm %>% mutate(age_adm = year(ADMITTIME) - year(DOB)) %>% ggplot() + geom_bar(mapping = aes(x = age_adm))
+
+```
+
 
 ## Q3
 
