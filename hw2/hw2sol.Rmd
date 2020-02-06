@@ -156,10 +156,10 @@ top_eth %>% ggplot(mapping = aes(x = ETHNICITY, y = n)) + geom_bar(stat = "ident
 
 ```
 
-- Death 
+- Death year
 
-```{r}
-admission %>% count(DEATHTIME)
+```{r, warning=FALSE}
+admission %>% mutate(death_year = year(DEATHTIME)) %>% ggplot() + geom_freqpoly(mapping = aes(x = death_year), bins = 40) + xlab("Year of Death") + ggtitle("Plot of In-Hospital Death Each Year") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
@@ -172,7 +172,7 @@ Link the data in `ADMISSION.csv` and `PATIENTS.csv` (<https://mimic.physionet.or
 
 **Solution**
 
-First let's try to read and parse the `PATIENTS.csv` data.
+First let's read and parse the `PATIENTS.csv` data.
 
 ```{r}
 patient <- read_csv("/home/203bdata/mimic-iii/PATIENTS.csv",
@@ -185,9 +185,10 @@ patient <- read_csv("/home/203bdata/mimic-iii/PATIENTS.csv",
 Let's merge the `ADMISSION.csv` and `PATIENTS.csv` together by `SUBJECT_ID`
 
 ```{r}
-patient_adm <- inner_join(patient, admission, by = "SUBJECT_ID")
-```
+adm_unique <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID","ADMITTIME")
 
+patient_adm <- inner_join(patient, adm_unique, by = "SUBJECT_ID")
+```
 
 - Gender
 
@@ -198,8 +199,7 @@ patient_adm %>% ggplot() + geom_bar(mapping = aes(x = factor(GENDER), y = ..prop
 - Age at admission 
 
 ```{r}
-patient_adm %>% mutate(age_adm = year(ADMITTIME) - year(DOB)) %>% ggplot() + geom_bar(mapping = aes(x = age_adm))
-
+patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>% ggplot() + geom_histogram(mapping = aes(x = age_adm), bins = 40)
 ```
 
 
@@ -207,10 +207,44 @@ patient_adm %>% mutate(age_adm = year(ADMITTIME) - year(DOB)) %>% ggplot() + geo
 
 `ICUSTAYS.csv` (<https://mimic.physionet.org/mimictables/icustays/>) contains data about Intensive Care Units (ICU) stays. Summarize following variables using appropriate graphs:  
 
-- length of ICU stay  
-- first ICU unit  
-- gender  
+First let's read and parse the `ICUSTAYS.csv` data.
+
+```{r}
+icu <- read_csv("/home/203bdata/mimic-iii/ICUSTAYS.csv",
+                    col_types = cols(ROW_ID = col_integer(),
+                                     SUBJECT_ID = col_integer(),
+                                     HADM_ID = col_integer(),
+                                     ICUSTAY_ID = col_integer(),
+                                     FIRST_WARDID = col_integer(),
+                                     LAST_WARDID = col_integer()))
+```
+
+- Length of ICU stay
+
+```{r, warning = FALSE}
+
+icu %>% ggplot() + geom_histogram(mapping = aes(x = LOS), bins = 100) + labs(title = "Plot of Length of ICU Stay", x = "Length of Stay (days)")
+
+```
+
+- First ICU unit  
+
+```{r}
+icu %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() 
+```
+
+- gender 
+
+```{r}
+
+```
+
 - age  
+
+```{r}
+
+```
+
 
 ## Q4 
 
