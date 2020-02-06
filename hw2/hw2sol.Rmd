@@ -98,16 +98,66 @@ admission %>% mutate(adm_hour = hour(ADMITTIME)) %>% ggplot() + geom_bar(mapping
 admission %>% mutate(adm_min = minute(ADMITTIME)) %>% ggplot() + geom_freqpoly(binwidth = 2, mapping = aes(x = adm_min)) + xlab("Minute of Admission") + ggtitle("Plot of Admission Minute") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- length of hospital stay  
+- length of hospital stay 
+
+```{r}
+admission %>% mutate(stay_length = as.numeric(as.duration(DISCHTIME-ADMITTIME)/ 86400)) %>% ggplot() + geom_density(mapping = aes(x = stay_length)) + xlab("Length of Stay (days)") + ggtitle("Plot of Length of Hospital Stay") + theme(plot.title = element_text(hjust = 0.5))
+```
+
 - admission type  
+
+```{r}
+admission %>% ggplot() + geom_bar(mapping = aes(x = ADMISSION_TYPE)) + xlab("Admission Type") + ggtitle("Barplot of Admission Type") + theme(plot.title = element_text(hjust = 0.5))
+```
+
 - number of admissions per patient  
+
+```{r}
+admission %>% count(SUBJECT_ID) %>% ggplot() + geom_bar(mapping = aes(x = n)) + xlab("Number of Admissions") + ggtitle("Frequency of Admissions per Patient") + theme(plot.title = element_text(hjust = 0.5))
+```
+
 - admission location  
+
+```{r}
+admission %>% ggplot() + geom_bar(mapping = aes(x = ADMISSION_LOCATION)) + coord_flip() + xlab("Admission Location") + ggtitle("Barplot of Admission Location")
+```
+
 - insurance  
+
+```{r}
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = INSURANCE)) + ggtitle("Plot of Patient Insurance") + theme(plot.title = element_text(hjust = 0.5))
+```
+
 - language  
+
+```{r}
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = LANGUAGE)) + ggtitle("Plot of Patient Language") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
 - religion  
-- martial status  
+
+```{r}
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = RELIGION)) + ggtitle("Plot of Patient Religion") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+- marital status 
+
+```{r}
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = MARITAL_STATUS)) + ggtitle("Plot of Marital Status") + xlab("Marital Status") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 - ethnicity  
+
+```{r}
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = ETHNICITY)) + ggtitle("Plot of Patient Ethnicity") + theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 - death 
+
+```{r}
+admission %>% count(DEATHTIME)
+```
+
 
 ## Q2
 
