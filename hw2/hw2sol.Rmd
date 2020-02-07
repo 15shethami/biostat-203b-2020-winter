@@ -302,17 +302,24 @@ patient_demo <- patient %>% select("SUBJECT_ID","GENDER")
 # first merge
 tibble1 <- inner_join(first_ICU, patient_demo, by = "SUBJECT_ID")
 
-admission_demo <- admission %>% select("SUBJECT_ID","LANGUAGE", "RELIGION", "MARITAL_STATUS", "ETHNICITY") %>% distinct(SUBJECT_ID, .keep_all = TRUE) 
+admission_demo <- admission %>% select("SUBJECT_ID", "LANGUAGE", "RELIGION", "MARITAL_STATUS", "ETHNICITY") %>% distinct(SUBJECT_ID, .keep_all = TRUE) 
 
 # second merge
 tibble2 <- left_join(tibble1, admission_demo, by = "SUBJECT_ID")
 
-ditems %>% select("LABEL") %>% str_view("systolic")
+systolic_ID <- ditems %>% filter(str_detect(LABEL, regex("systolic", ignore_case = TRUE))) %>% select("ITEMID", "LABEL")
+
+charts_sys <- inner_join(charts, systolic_ID, by = "ITEMID")
+first_sys <- charts_sys %>% select("SUBJECT_ID", "ICUSTAY_ID", "ITEMID", "CHARTTIME", "LABEL", "VALUE", "VALUEUOM") %>% arrange(SUBJECT_ID, CHARTTIME) %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID", "LABEL", "VALUE", "VALUEUOM")
+
+# third merge
+tibble3 <- left_join(tibble2, first_sys, by = "SUBJECT_ID")
 
 death_days <- as.numeric(as.duration(admission$DEATHTIME - admission$ADMITTIME), "days")
 
-#admission %>% mutate(ddays = case_when(death_days > 30 ~ "FALSE",
-                                      #death_days < 30 ~ "TRUE"))
+thirty_death <- admission %>% mutate(DDAYS = case_when(death_days >= 30 ~ "FALSE",
+                                      death_days < 30 ~ "TRUE")) %>% arrange(SUBJECT_ID) %>% select("SUBJECT_ID", "DDAYS", "ADMITTIME", "DEATHTIME")
+View(thirty_death)
 
 ```
 
