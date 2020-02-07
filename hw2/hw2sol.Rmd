@@ -130,10 +130,10 @@ admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>%
 ```{r}
 top_lang <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(LANGUAGE) %>% na.omit(LANGUAGE) %>% arrange(desc(n)) %>% slice(1:10)
 
-nb.cols <- 10
-mycolors <- colorRampPalette(brewer.pal(10, "Set2"))(nb.cols)
+#nb.cols <- 10
+#mycolors <- colorRampPalette(brewer.pal(10, "Set2"))(nb.cols)
 
-top_lang %>% ggplot(mapping = aes(x = LANGUAGE, y = n, fill = LANGUAGE)) + geom_bar(stat = "identity") + labs(title = "Top Seven Patient Languages", y = "count", x = "Language") + theme_minimal() + theme(legend.position = "none") + scale_fill_brewer(palette = "Blues")
+top_lang %>% ggplot(mapping = aes(x = LANGUAGE, y = n, fill = LANGUAGE)) + geom_bar(stat = "identity") + labs(title = "Top Seven Patient Languages", y = "count", x = "Language") + theme_minimal() + theme(legend.position = "none") #+ scale_fill_brewer(palette = "Blues")
  
 ```
 
@@ -317,9 +317,12 @@ tibble3 <- left_join(tibble2, first_sys, by = "SUBJECT_ID")
 
 death_days <- as.numeric(as.duration(admission$DEATHTIME - admission$ADMITTIME), "days")
 
-thirty_death <- admission %>% mutate(DDAYS = case_when(death_days >= 30 ~ "FALSE",
-                                      death_days < 30 ~ "TRUE")) %>% arrange(SUBJECT_ID) %>% select("SUBJECT_ID", "DDAYS", "ADMITTIME", "DEATHTIME")
-View(thirty_death)
+thirty_death <- admission %>% mutate(DDAYS = case_when(death_days >= 30 ~ FALSE,
+                                      death_days < 30 ~ TRUE)) %>% arrange(SUBJECT_ID) %>% select("SUBJECT_ID", "DDAYS", "ADMITTIME", "DEATHTIME") %>% arrange(SUBJECT_ID, ADMITTIME) %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID", "DDAYS")
 
+# last merge
+final_tibble <- inner_join(tibble3, thirty_death, by = "SUBJECT_ID")
+
+final_tibble %>% print(width = Inf) 
 ```
 
