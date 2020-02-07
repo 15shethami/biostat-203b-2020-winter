@@ -121,7 +121,8 @@ admission %>% ggplot(mapping = aes(x = ADMISSION_LOCATION)) + geom_bar(fill = "l
 - Insurance  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot(mapping = aes(x = INSURANCE)) + geom_bar(fill = "cadetblue") + labs(title = "Plot of Patient Insurance", x = "Insurance") + theme_minimal()
+admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% 
+  ggplot(mapping = aes(x = INSURANCE)) + geom_bar(fill = "cadetblue") + labs(title = "Plot of Patient Insurance", x = "Insurance") + theme_minimal()
 ```
 
 - Language  
@@ -129,7 +130,10 @@ admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot(mapping = aes(x 
 ```{r}
 top_lang <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(LANGUAGE) %>% na.omit(LANGUAGE) %>% arrange(desc(n)) %>% slice(1:10)
 
-top_lang %>% ggplot(mapping = aes(x = LANGUAGE, y = n, fill = LANGUAGE)) + geom_bar(stat = "identity") + labs(title = "Top Ten Patient Languages", y = "count", x = "Language") + theme_minimal() + theme(legend.position = "none")
+nb.cols <- 10
+mycolors <- colorRampPalette(brewer.pal(10, "Set2"))(nb.cols)
+
+top_lang %>% ggplot(mapping = aes(x = LANGUAGE, y = n, fill = LANGUAGE)) + geom_bar(stat = "identity") + labs(title = "Top Seven Patient Languages", y = "count", x = "Language") + theme_minimal() + theme(legend.position = "none") + scale_fill_brewer(palette = "Blues")
  
 ```
 
@@ -150,7 +154,7 @@ admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot(mapping = aes(x 
 ```{r}
 top_eth <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(ETHNICITY) %>% arrange(desc(n)) %>% slice(1:10)
 
-top_eth %>% ggplot(mapping = aes(x = ETHNICITY, y = n)) + geom_bar(stat = "identity", fill = "lightblue") + labs(title = "Plot of Patient Ethnicity", x = "Ethnicity", y = "count") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+top_eth %>% ggplot(mapping = aes(x = ETHNICITY, y = n)) + geom_bar(stat = "identity", fill = "lightblue") + labs(title = "Top Ten Patient Ethnicity", x = "Ethnicity", y = "count") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
 ```
 
@@ -233,7 +237,7 @@ icu %>% ggplot(mapping = aes(x = LOS)) + geom_histogram(bins = 100, fill = "ligh
 - First ICU unit  
 
 ```{r}
-icu %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot(mapping = aes(x = FIRST_CAREUNIT)) + geom_bar(fill = "lightblue4") + labs(title = "Plot of First ICU Unit", x = "First ICU Unit") + theme_minimal()
+icu %>% ggplot(mapping = aes(x = FIRST_CAREUNIT)) + geom_bar(fill = "lightblue4") + labs(title = "Plot of First ICU Unit", x = "First ICU Unit") + theme_minimal()
 ```
 
 Let's merge the `ADMISSION.csv`, `PATIENTS.csv`, `ICUSTAYS.csv` together by `SUBJECT_ID`
@@ -242,7 +246,6 @@ Let's merge the `ADMISSION.csv`, `PATIENTS.csv`, `ICUSTAYS.csv` together by `SUB
 adm_unique <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID","ADMITTIME")
 
 icu_uniq <- icu %>% distinct(SUBJECT_ID, .keep_all = TRUE)
-icu %>% distinct(ICUSTAY_ID, .keep_all = TRUE)
 
 icu_patient_adm <- inner_join(icu_uniq, patient_adm, by = "SUBJECT_ID")
 ```
@@ -268,20 +271,48 @@ icu_patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "y
 
 Compile a tibble that contains the first ICU stay of unique patients, with the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission.
 
+**Solution:**
+
+Let's first read and parse the `CHARTEVENTS.csv` and `D_ITEMS.csv` data.
 
 ```{r}
-#charts <- read_csv("/home/203bdata/mimic-iii/CHARTEVENTS.csv")
-#charts %>% distinct(SUBJECT_ID, .keep_all = TRUE)
+charts <- read_csv("/home/203bdata/mimic-iii/CHARTEVENTS.csv",
+                   col_types = cols(ROW_ID = col_integer(),
+                                     SUBJECT_ID = col_integer(),
+                                     HADM_ID = col_integer(),
+                                     ICUSTAY_ID = col_integer(),
+                                     ITEMID = col_integer()))
 
-#first_ICU <- icu %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID" , "HADM_ID", "ICUSTAY_ID", "FIRST_CAREUNIT")
+ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv",
+                   col_types = cols(ROW_ID = col_integer(),
+                                    ITEMID = col_integer(),
+                                    ABBREVIATION = col_character(),
+                                    UNITNAME = col_character(),
+                                    PARAM_TYPE = col_character(),
+                                    CONCEPTID = col_integer()))
 
-#patient_demo <- patient %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID","GENDER")
+```
 
-#admission_demo <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% merge(death_days = #as.numeric(as.duration(DEATHTIME - ADMITTIME)))
+```{r}
 
+first_ICU <- icu %>% select("SUBJECT_ID" , "HADM_ID", "ICUSTAY_ID", "INTIME") %>% arrange(SUBJECT_ID, INTIME) %>% distinct(SUBJECT_ID, .keep_all = TRUE)
 
+patient_demo <- patient %>% select("SUBJECT_ID","GENDER")
 
-#ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv")
+# first merge
+tibble1 <- inner_join(first_ICU, patient_demo, by = "SUBJECT_ID")
+
+admission_demo <- admission %>% select("SUBJECT_ID","LANGUAGE", "RELIGION", "MARITAL_STATUS", "ETHNICITY") %>% distinct(SUBJECT_ID, .keep_all = TRUE) 
+
+# second merge
+tibble2 <- left_join(tibble1, admission_demo, by = "SUBJECT_ID")
+
+ditems %>% select("LABEL") %>% str_view("systolic")
+
+death_days <- as.numeric(as.duration(admission$DEATHTIME - admission$ADMITTIME), "days")
+
+#admission %>% mutate(ddays = case_when(death_days > 30 ~ "FALSE",
+                                      #death_days < 30 ~ "TRUE"))
 
 ```
 
