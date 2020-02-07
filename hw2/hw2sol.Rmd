@@ -3,8 +3,6 @@ title: "Biostat 203B Homework 2"
 author: "Ami Sheth"
 subtitle: Due Feb 7 @ 11:59PM
 output: html_document
-        toc: true
-        toc_depth: 4
 ---
 
 ```{r setup, include=FALSE}
@@ -193,19 +191,26 @@ patient_adm <- inner_join(patient, adm_unique, by = "SUBJECT_ID")
 - Gender
 
 ```{r}
-patient_adm %>% ggplot() + geom_bar(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1), stat = "count") + scale_x_discrete(label = c("Female", "Male")) + labs(title = "Gender of Patients", y = "Proportion", x = "Gender")
+patient_adm %>% ggplot() + geom_bar(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1), stat = "count") + scale_x_discrete(label = c("Female", "Male")) + labs(title = "Gender of Patients", y = "Proportion", x = "Gender") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 - Age at admission 
 
 ```{r}
-patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>% ggplot() + geom_histogram(mapping = aes(x = age_adm), bins = 40)
+patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>% ggplot() + geom_histogram(mapping = aes(x = age_adm), bins = 50) + labs(title = "Age of Patients", x = "Age (yrs)") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
 ## Q3
 
 `ICUSTAYS.csv` (<https://mimic.physionet.org/mimictables/icustays/>) contains data about Intensive Care Units (ICU) stays. Summarize following variables using appropriate graphs:  
+
+- length of ICU stay  
+- first ICU unit  
+- gender  
+- age  
+
+**Solution:**
 
 First let's read and parse the `ICUSTAYS.csv` data.
 
@@ -222,27 +227,36 @@ icu <- read_csv("/home/203bdata/mimic-iii/ICUSTAYS.csv",
 - Length of ICU stay
 
 ```{r, warning = FALSE}
-
-icu %>% ggplot() + geom_histogram(mapping = aes(x = LOS), bins = 100) + labs(title = "Plot of Length of ICU Stay", x = "Length of Stay (days)")
-
+icu %>% ggplot() + geom_histogram(mapping = aes(x = LOS), bins = 100) + labs(title = "Plot of Length of ICU Stay", x = "Length of Stay (days)") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 - First ICU unit  
 
 ```{r}
-icu %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() 
+icu %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot() + geom_bar(mapping = aes(x = FIRST_CAREUNIT)) + labs(title = "Plot of First ICU Unit", x = "First ICU Unit") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
-- gender 
+Let's merge the `ADMISSION.csv`, `PATIENTS.csv`, `ICUSTAYS.csv` together by `SUBJECT_ID`
 
 ```{r}
+adm_unique <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID","ADMITTIME")
 
+icu_uniq <- icu %>% distinct(SUBJECT_ID, .keep_all = TRUE)
+icu %>% distinct(ICUSTAY_ID, .keep_all = TRUE)
+
+icu_patient_adm <- inner_join(icu_uniq, patient_adm, by = "SUBJECT_ID")
 ```
 
-- age  
+- Gender
 
 ```{r}
+icu_patient_adm %>% ggplot() + geom_bar(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1), stat = "count") + scale_x_discrete(label = c("Female", "Male")) + labs(title = "Gender of Patients", y = "Proportion", x = "Gender") + theme(plot.title = element_text(hjust = 0.5))
+```
 
+- Age  
+
+```{r}
+icu_patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>% ggplot() + geom_histogram(mapping = aes(x = age_adm), bins = 50) + labs(title = "Age of Patients", x = "Age (yrs)") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
@@ -252,4 +266,14 @@ icu %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot()
 
 `D_ITEMS.csv` (<https://mimic.physionet.org/mimictables/d_items/>) is the dictionary for the `ITEMID` in `CHARTEVENTS.csv`. Find potential values of `ITEMID` that correspond to systolic blood pressure, i.e., `LABEL` contains the string `systolic`. 
 
-Compile a tibble that contains the first ICU stay of unique patients, with the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospitcal admission.
+Compile a tibble that contains the first ICU stay of unique patients, with the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission.
+
+
+```{r}
+charts <- read_csv("/home/203bdata/mimic-iii/CHARTEVENTS.csv")
+
+charts %>% distinct(SUBJECT_ID, .keep_all = TRUE)
+ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv")
+View(ditems)
+```
+
