@@ -13,9 +13,9 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 sessionInfo()
 ```
 
-Use tidyverse (ggpot2, dplyr) to explore the [MIMIC-III](https://mimic.physionet.org) data introduced in [homework 1](https://ucla-biostat203b-2020winter.github.io/hw/hw1/hw1.html).
+Use tidyverse (ggplot2, dplyr) to explore the [MIMIC-III](https://mimic.physionet.org) data introduced in [homework 1](https://ucla-biostat203b-2020winter.github.io/hw/hw1/hw1.html).
 
-### Prerequistites 
+### Prerequisites 
 
 Load tidyverse and lubridate:
 ```{r}
@@ -92,7 +92,7 @@ admission %>%
   theme_minimal()
 ```
 
-There is no pattern observed from this barplot, indicating that number of admissions is independent of month. 
+There is no pattern observed from this bar plot, indicating that number of admissions is independent of month. 
 
 - Admission week day
 
@@ -105,7 +105,7 @@ admission %>%
   theme_minimal()
 ```
 
-From the barplot, the number of admissions at the start of the month (1st) to end of the month (30st) is approximately uniform. The decline at Day 31 is due to half of the months in a year not having a 31st calender day. 
+From the bar plot, the number of admissions at the start of the month (1st) to end of the month (30st) is approximately uniform. The decline at Day 31 is due to half of the months in a year not having a 31st calender day. 
 
 - Admission hour
 
@@ -175,7 +175,7 @@ admission %>%
   theme_minimal()
 ```
 
-From the plot, most patient are not readmitted into a hospital more than 1 or 2 times. 
+From the plot, most patients are not readmitted into a hospital more than 1 or 2 times. 
 
 - Admission location  
 
@@ -188,7 +188,7 @@ admission %>%
   theme_minimal()
 ```
 
-The admission location is the previous place of the patient prior to arriving at the hospital. Emergency room admit is the most common location, which matches the previous observation that emergency/ unplanned medical events are the most likley admission type. 
+The admission location is the place of the patient prior to arriving at the hospital. Emergency room admit is the most common location, which matches the previous observation that emergency/ unplanned medical events are the most likely admission type. 
 
 - Insurance  
 
@@ -201,7 +201,7 @@ admission %>%
   theme_minimal()
 ```
 
-From the barplot, medicare and private insurance are the top two types of patient insurance.  
+From the bar plot, medicare and private insurance are the top two types of patient insurance.  
 
 - Language  
 
@@ -267,7 +267,7 @@ top_eth %>%
   theme_minimal()
 ```
 
-Most patients are White, indicating that the data is not ethnicial diverse. 
+Most patients are White, indicating that the data is not ethnically diverse. 
 
 - Death year
 
@@ -280,7 +280,7 @@ admission %>%
   theme_minimal()
 ```
 
-From the plot, there appears to be a decrease in the number of deaths every fifteen years. This spikey pattern could be further explored by analyzing what external events are occuring around the years with either a peak or trough. 
+From the plot, there appears to be a decrease in the number of deaths every fifteen years. This spiky pattern could be further explored by analyzing what external events are occurring around the years with either a peak or trough. 
 
 ## Q2
 
@@ -339,7 +339,7 @@ patient_adm %>%
   theme_minimal()
 ```
 
-The plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identifaction. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed. 
+The plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identification. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed. 
 
 ## Q3
 
@@ -379,7 +379,7 @@ icu %>%
   theme_minimal()
 ```
 
-The plot depicts that most patients stay in ICU for 2-5 days with a range of approximately 40 days. 
+The plot depicts that most patients stay in ICU for 2-5 days with a range of approximately 60 days. 
 
 - First ICU unit  
 
@@ -431,7 +431,7 @@ icu_patient_adm %>%
   theme_minimal()
 ```
 
-Similar to the previous plot, this plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identifaction. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed for ICU patients.
+Similar to the previous plot, this plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identification. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed for ICU patients.
 
 ## Q4 
 
@@ -471,6 +471,7 @@ ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv",
 Let's create a tibble containing the first ICU stay of unique patients, the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission
 
 Let's extract first ICU stay and gender of unique patients by 
+
 1. Ordering `INTIME`, the time in which patient was transferred to the ICU, to obtain first ICU stay 
 2. Removing any other observation from a patient with multiple ICU stays 
 3. Selecting `GENDER` from `PATIENTS.csv` and combining it into a tibble with first ICU stay 
@@ -485,7 +486,7 @@ patient_demo <- patient %>% select("SUBJECT_ID", "GENDER")
 tibble1 <- inner_join(first_ICU, patient_demo, by = "SUBJECT_ID")
 ```
 
-Let's extract patient demographic information from `ADMISSION.csv` and combine it with the previously formed tibble by matching observations from patient demographics to previous tibble  
+Let's extract patient demographic information from `ADMISSION.csv` and combine it with the previously formed tibble by matching observations from patient demographics to the previous tibble  
 
 ```{r}
 admission_demo <- admission %>%
@@ -499,6 +500,7 @@ tibble2 <- left_join(tibble1, admission_demo, by = "SUBJECT_ID")
 ```
 
 Let's extract first systolic blood pressure measurement during ICU stay by 
+
 1. Finding all labels containing the word *systolic*
 2. Matching all patients in `CHARTEVENTS.csv` that have a measurement for systolic BP
 3. Ordering the data by `CHARTTIME`, which records the time at which an observation was made (the earliest `CHARTTIME` for systolic BP is assumed to be the closest proxy for first systolic BP measurement during ICU stay)
@@ -522,13 +524,13 @@ first_sys <- charts_sys %>%
   select("SUBJECT_ID", "LABEL", "VALUE", "VALUEUOM")
 
 tibble3 <- left_join(tibble2, first_sys, by = "SUBJECT_ID")
-
 ```
 
 Let's extract whether the patient died within 30 days of hospital admission by
+
 1. Calculating the number of days from hospital admission to in-hospital death
-2. Creating a boolean to indicate whether patient died within 30 days
-3. Retaining observations from a patient only if they died on their first admission to match previously extracted information about first ICU stay and first systolic blood pressure 
+2. Creating a Boolean to indicate whether patient died within 30 days
+3. Retaining observations from a patient only if they died on their first admission to match previously extracted information about **first** ICU stay and **first** systolic blood pressure 
 
 ```{r}
 death_days <- as.numeric(
@@ -552,6 +554,8 @@ The final tibble contains 46,476 observations of unique patients' first ICU stay
 
 ```{r}
 final_tibble <- inner_join(tibble3, thirty_death, by = "SUBJECT_ID")
-final_tibble %>% print(width = Inf)
+final_tibble %>%
+  select(-"INTIME") %>%
+  print(width = Inf)
 ```
 
