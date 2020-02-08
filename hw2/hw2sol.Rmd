@@ -470,7 +470,11 @@ ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv",
 
 Let's create a tibble containing the first ICU stay of unique patients, the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission
 
-Let's first extract
+Let's extract first ICU stay and gender of unique patients by 
+1. Ordering `INTIME`, the time in which patient was transferred to the ICU, to obtain first ICU stay 
+2. Removing any other observation from a patient with multiple ICU stays 
+3. Selecting `GENDER` from `PATIENTS.csv` and combining it into a tibble with first ICU stay 
+
 ```{r}
 first_ICU <- icu %>%
   select("SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "INTIME") %>%
@@ -478,10 +482,12 @@ first_ICU <- icu %>%
   distinct(SUBJECT_ID, .keep_all = TRUE)
 
 patient_demo <- patient %>% select("SUBJECT_ID", "GENDER")
-
-# first merge
 tibble1 <- inner_join(first_ICU, patient_demo, by = "SUBJECT_ID")
+```
 
+Let's extract patient demographic information from `ADMISSION.csv` and combine it with the previously formed tibble by matching observations from patient demographics to previous tibble  
+
+```{r}
 admission_demo <- admission %>%
   select(
     "SUBJECT_ID", "LANGUAGE", "RELIGION",
@@ -489,9 +495,18 @@ admission_demo <- admission %>%
   ) %>%
   distinct(SUBJECT_ID, .keep_all = TRUE)
 
-# second merge
 tibble2 <- left_join(tibble1, admission_demo, by = "SUBJECT_ID")
+```
 
+Let's extract first systolic blood pressure measurement during ICU stay by 
+1. Finding all labels containing the word *systolic*
+2. Matching all patients in `CHARTEVENTS.csv` that have a measurement for systolic BP
+3. Ordering the data by `CHARTTIME`, which records the time at which an observation was made (the earliest `CHARTTIME` for systolic BP is assumed to be the closest proxy for first systolic BP measurement during ICU stay)
+4. Removing any other observation from a patient with multiple systolic BP during ICU stay
+
+The value of systolic BP is then added to the previous tibble. Observations from first ICU stay are retained even if patient does not have a value for systolic blood pressure.
+
+```{r}
 systolic_ID <- ditems %>%
   filter(str_detect(LABEL, regex("systolic", ignore_case = TRUE))) %>%
   select("ITEMID", "LABEL")
@@ -506,9 +521,16 @@ first_sys <- charts_sys %>%
   distinct(SUBJECT_ID, .keep_all = TRUE) %>%
   select("SUBJECT_ID", "LABEL", "VALUE", "VALUEUOM")
 
-# third merge
 tibble3 <- left_join(tibble2, first_sys, by = "SUBJECT_ID")
 
+```
+
+Let's extract whether the patient died within 30 days of hospital admission by
+1. Calculating the number of days from hospital admission to in-hospital death
+2. Creating a boolean to indicate whether patient died within 30 days
+3. Retaining observations from a patient only if they died on their first admission to match previously extracted information about first ICU stay and first systolic blood pressure 
+
+```{r}
 death_days <- as.numeric(
   as.duration(admission$DEATHTIME - admission$ADMITTIME),
   "days"
@@ -524,10 +546,12 @@ thirty_death <- admission %>%
   arrange(SUBJECT_ID, ADMITTIME) %>%
   distinct(SUBJECT_ID, .keep_all = TRUE) %>%
   select("SUBJECT_ID", "DDAYS")
+```
 
-# last merge
+The final tibble contains 46,476 observations of unique patients' first ICU stay and then additionally information about demographics, first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission. The final tibble is not restricted to only patients that have values for each of these categories. 
+
+```{r}
 final_tibble <- inner_join(tibble3, thirty_death, by = "SUBJECT_ID")
-
 final_tibble %>% print(width = Inf)
 ```
 
