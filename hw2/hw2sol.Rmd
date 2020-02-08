@@ -326,6 +326,8 @@ patient_adm %>%
   theme_minimal()
 ```
 
+The number of male patients is about 20% higher that the number of female patients admitted to the hospital. In other words, less than half of the hospital's patients are females.
+
 - Age at admission 
 
 ```{r}
@@ -337,6 +339,7 @@ patient_adm %>%
   theme_minimal()
 ```
 
+The plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identifaction. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed. 
 
 ## Q3
 
@@ -376,6 +379,8 @@ icu %>%
   theme_minimal()
 ```
 
+The plot depicts that most patients stay in ICU for 2-5 days with a range of approximately 40 days. 
+
 - First ICU unit  
 
 ```{r}
@@ -385,6 +390,8 @@ icu %>%
   labs(title = "Plot of First ICU Unit", x = "First ICU Unit") +
   theme_minimal()
 ```
+
+Most patients stay in MICU, medical intensive care unit, for their first ICU unit. The other first ICU units are have an approximately even number of patients. 
 
 Let's merge the `ADMISSION.csv`, `PATIENTS.csv`, `ICUSTAYS.csv` together by `SUBJECT_ID`
 
@@ -411,6 +418,8 @@ icu_patient_adm %>%
   theme_minimal()
 ```
 
+The number of male patients is more than half of the number of female patients staying in ICU.
+
 - Age  
 
 ```{r}
@@ -422,6 +431,7 @@ icu_patient_adm %>%
   theme_minimal()
 ```
 
+Similar to the previous plot, this plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identifaction. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed for ICU patients.
 
 ## Q4 
 
