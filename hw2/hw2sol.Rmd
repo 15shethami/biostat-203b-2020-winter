@@ -15,6 +15,14 @@ sessionInfo()
 
 Use tidyverse (ggpot2, dplyr) to explore the [MIMIC-III](https://mimic.physionet.org) data introduced in [homework 1](https://ucla-biostat203b-2020winter.github.io/hw/hw1/hw1.html).
 
+### Prerequistites 
+
+Load tidyverse and lubridate:
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
 ## Q1
 
 Demographic information of the patients admitted into hospital is available in `ADMISSION.csv`. See <https://mimic.physionet.org/mimictables/admissions/> for details of each field in this file. Summarize following variables using appropriate graphs:   
@@ -38,130 +46,213 @@ Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) i
 
 **Solution:**
 
-### Prerequistites 
-
-Load tidyverse and lubridate:
-```{r}
-library(tidyverse)
-library(lubridate)
-```
-
 ### Import data
+
 Let's first display the first 10 lines of the `ADMISSION.csv` file:
 ```{bash}
 head /home/203bdata/mimic-iii/ADMISSIONS.csv
 ```
 
-First try of parsing the data:
+Let's parse the data: 
 ```{r}
 admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
-                      col_types = cols(ROW_ID = col_integer(),
-                                       SUBJECT_ID = col_integer(),
-                                       HADM_ID = col_integer(),
-                                       HOSPITAL_EXPIRE_FLAG = col_logical(),
-                                       HAS_CHARTEVENTS_DATA = col_logical()))
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    HADM_ID = col_integer(),
+    HOSPITAL_EXPIRE_FLAG = col_logical(),
+    HAS_CHARTEVENTS_DATA = col_logical()
+  )
+)
 ```
 
-## Summarizing the Data 
+### Summarizing the Data 
 
 - Admission year
 
 ```{r}
-admission %>% mutate(adm_year = year(ADMITTIME)) %>% ggplot(mapping = aes(x = adm_year)) + geom_bar(color = "white", fill = "lightblue3") + labs(title = "Barplot of Admission Year", x = "Year of Admission") + theme_minimal()
+admission %>%
+  mutate(adm_year = year(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_year)) +
+  geom_bar(color = "white", fill = "lightblue3") +
+  labs(title = "Barplot of Admission Year", x = "Year of Admission") +
+  theme_minimal()
 ```
+
+
 
 - Admission month
 
 ```{r}
-admission %>% mutate(adm_month = month(ADMITTIME, label = T)) %>% ggplot(mapping = aes(x = adm_month)) + geom_bar(fill = "lightblue4" ) + labs(title = "Barplot of Admission Month", x = "Month of Admission") + theme_minimal()
+admission %>%
+  mutate(adm_month = month(ADMITTIME, label = T)) %>%
+  ggplot(mapping = aes(x = adm_month)) +
+  geom_bar(fill = "lightblue4") +
+  labs(title = "Barplot of Admission Month", x = "Month of Admission") +
+  theme_minimal()
 ```
 
 - Admission week day
 
 ```{r}
-admission %>% mutate(adm_day = day(ADMITTIME)) %>% ggplot(mapping = aes(x = adm_day)) + geom_bar(fill = "lightblue") + labs(title = "Barplot of Admission Day", x = "Day of the Month") + theme_minimal()
+admission %>%
+  mutate(adm_day = day(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_day)) +
+  geom_bar(fill = "lightblue") +
+  labs(title = "Barplot of Admission Day", x = "Day of the Month") +
+  theme_minimal()
 ```
 
 - Admission hour
 
 ```{r}
-admission %>% mutate(adm_hour = hour(ADMITTIME)) %>% ggplot(mapping = aes(x = adm_hour)) + geom_bar(fill = "cadetblue") + labs(title = "Barplot of Admission Hour", x = "Hour of the Day") + theme_minimal()
+admission %>%
+  mutate(adm_hour = hour(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_hour)) +
+  geom_bar(fill = "cadetblue") +
+  labs(title = "Barplot of Admission Hour", x = "Hour of the Day") +
+  theme_minimal()
 ```
 
 - Admission minute
 
 ```{r}
-admission %>% mutate(adm_min = minute(ADMITTIME)) %>% ggplot(mapping = aes(x = adm_min)) + geom_freqpoly(binwidth = 2) + labs(title = "Plot of Admission Minute", x = "Minute of Admission") + theme_minimal()
+admission %>%
+  mutate(adm_min = minute(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_min)) +
+  geom_freqpoly(binwidth = 2) +
+  labs(title = "Plot of Admission Minute", x = "Minute of Admission") +
+  theme_minimal()
 ```
 
 - Length of hospital stay 
 
 ```{r}
-admission %>% mutate(stay_length = as.numeric(as.duration(DISCHTIME-ADMITTIME)/ 86400)) %>% ggplot(mapping = aes(x = stay_length)) + geom_density() + labs(title = "Plot of Length of Hospital Stay", x = "Length of Stay (in days)") + theme_minimal()
+admission %>%
+  mutate(stay_len = as.numeric(as.duration(DISCHTIME - ADMITTIME) / 86400)) %>%
+  ggplot(mapping = aes(x = stay_len)) +
+  geom_density() +
+  labs(
+    title = "Plot of Length of Hospital Stay",
+    x = "Length of Stay (in days)"
+  ) +
+  theme_minimal()
 ```
 
 - Admission type  
 
 ```{r}
-admission %>% ggplot(mapping = aes(x = ADMISSION_TYPE)) + geom_bar(fill = "lightblue3") + labs(title = "Barplot of Admission Type", x = "Admission Type") + theme_minimal()
+admission %>%
+  ggplot(mapping = aes(x = ADMISSION_TYPE)) +
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Barplot of Admission Type", x = "Admission Type") +
+  theme_minimal()
 ```
 
 - Number of admissions per patient  
 
 ```{r}
-admission %>% count(SUBJECT_ID) %>% ggplot(mapping = aes(x = n)) + geom_bar(fill = "lightblue4") + labs(title = "Frequency of Admissions per Patient", x = "Number of Admissions") + theme_minimal()
+admission %>%
+  count(SUBJECT_ID) %>%
+  ggplot(mapping = aes(x = n)) +
+  geom_bar(fill = "lightblue4") +
+  labs(
+    title = "Frequency of Admissions per Patient",
+    x = "Number of Admissions"
+  ) +
+  theme_minimal()
 ```
 
 - Admission location  
 
 ```{r}
-admission %>% ggplot(mapping = aes(x = ADMISSION_LOCATION)) + geom_bar(fill = "lightblue") + coord_flip() + labs(title = "Barplot of Admission Location", x = "Admission Location") + theme_minimal()
+admission %>%
+  ggplot(mapping = aes(x = ADMISSION_LOCATION)) +
+  geom_bar(fill = "lightblue") +
+  coord_flip() +
+  labs(title = "Barplot of Admission Location", x = "Admission Location") +
+  theme_minimal()
 ```
 
 - Insurance  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% 
-  ggplot(mapping = aes(x = INSURANCE)) + geom_bar(fill = "cadetblue") + labs(title = "Plot of Patient Insurance", x = "Insurance") + theme_minimal()
+admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  ggplot(mapping = aes(x = INSURANCE)) +
+  geom_bar(fill = "cadetblue") +
+  labs(title = "Plot of Patient Insurance", x = "Insurance") +
+  theme_minimal()
 ```
 
 - Language  
 
 ```{r}
-top_lang <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(LANGUAGE) %>% na.omit(LANGUAGE) %>% arrange(desc(n)) %>% slice(1:10)
+top_lang <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  count(LANGUAGE) %>%
+  na.omit(LANGUAGE) %>%
+  arrange(desc(n)) %>%
+  slice(1:10)
 
-#nb.cols <- 10
-#mycolors <- colorRampPalette(brewer.pal(10, "Set2"))(nb.cols)
-
-top_lang %>% ggplot(mapping = aes(x = LANGUAGE, y = n, fill = LANGUAGE)) + geom_bar(stat = "identity") + labs(title = "Top Seven Patient Languages", y = "count", x = "Language") + theme_minimal() + theme(legend.position = "none") #+ scale_fill_brewer(palette = "Blues")
- 
+top_lang %>%
+  ggplot(mapping = aes(x = LANGUAGE, y = n)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(title = "Top Ten Patient Languages", y = "count", x = "Language") +
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
 
 - Religion  
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot(mapping = aes(x = RELIGION)) + geom_bar(fill = "lightblue3") + labs(title = "Plot of Patient Religion", x = "Religion") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  ggplot(mapping = aes(x = RELIGION)) +
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Plot of Patient Religion", x = "Religion") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 - Marital status 
 
 ```{r}
-admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% ggplot(mapping = aes(x = MARITAL_STATUS)) + geom_bar(fill = "lightblue4") + labs(title = "Plot of Marital Status", x = "Marital Status") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  ggplot(mapping = aes(x = MARITAL_STATUS)) +
+  geom_bar(fill = "lightblue4") +
+  labs(title = "Plot of Marital Status", x = "Marital Status") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 - Ethnicity  
 
 ```{r}
-top_eth <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% count(ETHNICITY) %>% arrange(desc(n)) %>% slice(1:10)
+top_eth <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  count(ETHNICITY) %>%
+  arrange(desc(n)) %>%
+  slice(1:10)
 
-top_eth %>% ggplot(mapping = aes(x = ETHNICITY, y = n)) + geom_bar(stat = "identity", fill = "lightblue") + labs(title = "Top Ten Patient Ethnicity", x = "Ethnicity", y = "count") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
-
+top_eth %>%
+  ggplot(mapping = aes(x = ETHNICITY, y = n)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  coord_flip() +
+  labs(title = "Top Ten Patient Ethnicity", x = "Ethnicity", y = "count") +
+  theme_minimal()
 ```
 
 - Death year
 
 ```{r, warning=FALSE}
-admission %>% mutate(death_year = year(DEATHTIME)) %>% ggplot(mapping = aes(x = death_year)) + geom_freqpoly(bins = 40) + labs(title = "Plot of In-Hospital Deaths Each Year", x = "Year of Death") + theme_minimal()
+admission %>%
+  mutate(death_year = year(DEATHTIME)) %>%
+  ggplot(mapping = aes(x = death_year)) +
+  geom_freqpoly(bins = 40) +
+  labs(title = "Plot of In-Hospital Deaths Each Year", x = "Year of Death") +
+  theme_minimal()
 ```
 
 
@@ -178,16 +269,20 @@ First let's read and parse the `PATIENTS.csv` data.
 
 ```{r}
 patient <- read_csv("/home/203bdata/mimic-iii/PATIENTS.csv",
-                    col_types = cols(ROW_ID = col_integer(),
-                                     SUBJECT_ID = col_integer(),
-                                     EXPIRE_FLAG = col_character()))
-                    
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    EXPIRE_FLAG = col_character()
+  )
+)
 ```
 
 Let's merge the `ADMISSION.csv` and `PATIENTS.csv` together by `SUBJECT_ID`
 
 ```{r}
-adm_unique <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID","ADMITTIME")
+adm_unique <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "ADMITTIME")
 
 patient_adm <- inner_join(patient, adm_unique, by = "SUBJECT_ID")
 ```
@@ -195,13 +290,23 @@ patient_adm <- inner_join(patient, adm_unique, by = "SUBJECT_ID")
 - Gender
 
 ```{r}
-patient_adm %>% ggplot(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1)) + geom_bar(stat = "count", fill = c("lightpink", "lightblue")) + scale_x_discrete(label = c("Female", "Male")) + labs(title = "Gender of Patients", y = "Proportion", x = "Gender") + theme_minimal()
+patient_adm %>%
+  ggplot(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1)) +
+  geom_bar(stat = "count", fill = c("lightpink", "lightblue")) +
+  scale_x_discrete(label = c("Female", "Male")) +
+  labs(title = "Gender of Patients", y = "Proportion", x = "Gender") +
+  theme_minimal()
 ```
 
 - Age at admission 
 
 ```{r}
-patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>% ggplot(mapping = aes(x = age_adm)) + geom_histogram(bins = 50, fill = "cadetblue") + labs(title = "Age of Patients", x = "Age (yrs)") + theme_minimal()
+patient_adm %>%
+  mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>%
+  ggplot(mapping = aes(x = age_adm)) +
+  geom_histogram(bins = 50, fill = "cadetblue") +
+  labs(title = "Age of Patients", x = "Age (yrs)") +
+  theme_minimal()
 ```
 
 
@@ -220,30 +325,43 @@ First let's read and parse the `ICUSTAYS.csv` data.
 
 ```{r}
 icu <- read_csv("/home/203bdata/mimic-iii/ICUSTAYS.csv",
-                    col_types = cols(ROW_ID = col_integer(),
-                                     SUBJECT_ID = col_integer(),
-                                     HADM_ID = col_integer(),
-                                     ICUSTAY_ID = col_integer(),
-                                     FIRST_WARDID = col_integer(),
-                                     LAST_WARDID = col_integer()))
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    HADM_ID = col_integer(),
+    ICUSTAY_ID = col_integer(),
+    FIRST_WARDID = col_integer(),
+    LAST_WARDID = col_integer()
+  )
+)
 ```
 
 - Length of ICU stay
 
 ```{r, warning = FALSE}
-icu %>% ggplot(mapping = aes(x = LOS)) + geom_histogram(bins = 100, fill = "lightblue3") + labs(title = "Plot of Length of ICU Stay", x = "Length of Stay (in days)") + theme_minimal()
+icu %>%
+  ggplot(mapping = aes(x = LOS)) +
+  geom_histogram(bins = 100, fill = "lightblue3") +
+  labs(title = "Plot of Length of ICU Stay", x = "Length of Stay (in days)") +
+  theme_minimal()
 ```
 
 - First ICU unit  
 
 ```{r}
-icu %>% ggplot(mapping = aes(x = FIRST_CAREUNIT)) + geom_bar(fill = "lightblue4") + labs(title = "Plot of First ICU Unit", x = "First ICU Unit") + theme_minimal()
+icu %>%
+  ggplot(mapping = aes(x = FIRST_CAREUNIT)) +
+  geom_bar(fill = "lightblue4") +
+  labs(title = "Plot of First ICU Unit", x = "First ICU Unit") +
+  theme_minimal()
 ```
 
 Let's merge the `ADMISSION.csv`, `PATIENTS.csv`, `ICUSTAYS.csv` together by `SUBJECT_ID`
 
 ```{r}
-adm_unique <- admission %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID","ADMITTIME")
+adm_unique <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "ADMITTIME")
 
 icu_uniq <- icu %>% distinct(SUBJECT_ID, .keep_all = TRUE)
 
@@ -253,13 +371,23 @@ icu_patient_adm <- inner_join(icu_uniq, patient_adm, by = "SUBJECT_ID")
 - Gender
 
 ```{r}
-icu_patient_adm %>% ggplot(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1)) + geom_bar(stat = "count", fill = c("lightpink", "lightblue")) + scale_x_discrete(label = c("Female", "Male")) + labs(title = "Gender of Patients", y = "Proportion", x = "Gender") + theme_minimal()
+icu_patient_adm %>%
+  ggplot(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1)) +
+  geom_bar(stat = "count", fill = c("lightpink", "lightblue")) +
+  scale_x_discrete(label = c("Female", "Male")) +
+  labs(title = "Gender of Patients", y = "Proportion", x = "Gender") +
+  theme_minimal()
 ```
 
 - Age  
 
 ```{r}
-icu_patient_adm %>% mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>% ggplot(mapping = aes(x = age_adm)) + geom_histogram(bins = 50, fill = "cadetblue") + labs(title = "Age of Patients", x = "Age (yrs)") + theme_minimal()
+icu_patient_adm %>%
+  mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>%
+  ggplot(mapping = aes(x = age_adm)) +
+  geom_histogram(bins = 50, fill = "cadetblue") +
+  labs(title = "Age of Patients", x = "Age (yrs)") +
+  theme_minimal()
 ```
 
 
@@ -277,52 +405,85 @@ Let's first read and parse the `CHARTEVENTS.csv` and `D_ITEMS.csv` data.
 
 ```{r}
 charts <- read_csv("/home/203bdata/mimic-iii/CHARTEVENTS.csv",
-                   col_types = cols(ROW_ID = col_integer(),
-                                     SUBJECT_ID = col_integer(),
-                                     HADM_ID = col_integer(),
-                                     ICUSTAY_ID = col_integer(),
-                                     ITEMID = col_integer()))
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    HADM_ID = col_integer(),
+    ICUSTAY_ID = col_integer(),
+    ITEMID = col_integer()
+  )
+)
 
 ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv",
-                   col_types = cols(ROW_ID = col_integer(),
-                                    ITEMID = col_integer(),
-                                    ABBREVIATION = col_character(),
-                                    UNITNAME = col_character(),
-                                    PARAM_TYPE = col_character(),
-                                    CONCEPTID = col_integer()))
-
+  col_types = cols(
+    ROW_ID = col_integer(),
+    ITEMID = col_integer(),
+    ABBREVIATION = col_character(),
+    UNITNAME = col_character(),
+    PARAM_TYPE = col_character(),
+    CONCEPTID = col_integer()
+  )
+)
 ```
 
+Let's create the tibble:
 ```{r}
+first_ICU <- icu %>%
+  select("SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "INTIME") %>%
+  arrange(SUBJECT_ID, INTIME) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE)
 
-first_ICU <- icu %>% select("SUBJECT_ID" , "HADM_ID", "ICUSTAY_ID", "INTIME") %>% arrange(SUBJECT_ID, INTIME) %>% distinct(SUBJECT_ID, .keep_all = TRUE)
-
-patient_demo <- patient %>% select("SUBJECT_ID","GENDER")
+patient_demo <- patient %>% select("SUBJECT_ID", "GENDER")
 
 # first merge
 tibble1 <- inner_join(first_ICU, patient_demo, by = "SUBJECT_ID")
 
-admission_demo <- admission %>% select("SUBJECT_ID", "LANGUAGE", "RELIGION", "MARITAL_STATUS", "ETHNICITY") %>% distinct(SUBJECT_ID, .keep_all = TRUE) 
+admission_demo <- admission %>%
+  select(
+    "SUBJECT_ID", "LANGUAGE", "RELIGION",
+    "MARITAL_STATUS", "ETHNICITY"
+  ) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE)
 
 # second merge
 tibble2 <- left_join(tibble1, admission_demo, by = "SUBJECT_ID")
 
-systolic_ID <- ditems %>% filter(str_detect(LABEL, regex("systolic", ignore_case = TRUE))) %>% select("ITEMID", "LABEL")
+systolic_ID <- ditems %>%
+  filter(str_detect(LABEL, regex("systolic", ignore_case = TRUE))) %>%
+  select("ITEMID", "LABEL")
 
 charts_sys <- inner_join(charts, systolic_ID, by = "ITEMID")
-first_sys <- charts_sys %>% select("SUBJECT_ID", "ICUSTAY_ID", "ITEMID", "CHARTTIME", "LABEL", "VALUE", "VALUEUOM") %>% arrange(SUBJECT_ID, CHARTTIME) %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID", "LABEL", "VALUE", "VALUEUOM")
+first_sys <- charts_sys %>%
+  select(
+    "SUBJECT_ID", "ICUSTAY_ID", "ITEMID", "CHARTTIME",
+    "LABEL", "VALUE", "VALUEUOM"
+  ) %>%
+  arrange(SUBJECT_ID, CHARTTIME) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "LABEL", "VALUE", "VALUEUOM")
 
 # third merge
 tibble3 <- left_join(tibble2, first_sys, by = "SUBJECT_ID")
 
-death_days <- as.numeric(as.duration(admission$DEATHTIME - admission$ADMITTIME), "days")
+death_days <- as.numeric(
+  as.duration(admission$DEATHTIME - admission$ADMITTIME),
+  "days"
+)
 
-thirty_death <- admission %>% mutate(DDAYS = case_when(death_days >= 30 ~ FALSE,
-                                      death_days < 30 ~ TRUE)) %>% arrange(SUBJECT_ID) %>% select("SUBJECT_ID", "DDAYS", "ADMITTIME", "DEATHTIME") %>% arrange(SUBJECT_ID, ADMITTIME) %>% distinct(SUBJECT_ID, .keep_all = TRUE) %>% select("SUBJECT_ID", "DDAYS")
+thirty_death <- admission %>%
+  mutate(DDAYS = case_when(
+    death_days >= 30 ~ FALSE,
+    death_days < 30 ~ TRUE
+  )) %>%
+  arrange(SUBJECT_ID) %>%
+  select("SUBJECT_ID", "DDAYS", "ADMITTIME", "DEATHTIME") %>%
+  arrange(SUBJECT_ID, ADMITTIME) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "DDAYS")
 
 # last merge
 final_tibble <- inner_join(tibble3, thirty_death, by = "SUBJECT_ID")
 
-final_tibble %>% print(width = Inf) 
+final_tibble %>% print(width = Inf)
 ```
 
