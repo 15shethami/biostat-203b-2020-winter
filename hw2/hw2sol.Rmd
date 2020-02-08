@@ -46,14 +46,14 @@ Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) i
 
 **Solution:**
 
-### Import data
+Let's first display the first 10 lines of the `ADMISSION.csv` file
 
-Let's first display the first 10 lines of the `ADMISSION.csv` file:
 ```{bash}
 head /home/203bdata/mimic-iii/ADMISSIONS.csv
 ```
 
-Let's parse the data: 
+Let's parse the data
+
 ```{r}
 admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
   col_types = cols(
@@ -66,7 +66,7 @@ admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
 )
 ```
 
-### Summarizing the Data 
+Let's summarize the following variables
 
 - Admission year
 
@@ -79,7 +79,7 @@ admission %>%
   theme_minimal()
 ```
 
-
+The `ADMISSION.csv` covers a time period between June 1, 2001 and October 10, 2012. This 11-12 year time period is spread out over around 100 years. The plot does not display much pattern; however, further investigation can be done around 2135 year, where the highest peak occurs.
 
 - Admission month
 
@@ -92,6 +92,8 @@ admission %>%
   theme_minimal()
 ```
 
+There is no pattern observed from this barplot, indicating that number of admissions is independent of month. 
+
 - Admission week day
 
 ```{r}
@@ -102,6 +104,8 @@ admission %>%
   labs(title = "Barplot of Admission Day", x = "Day of the Month") +
   theme_minimal()
 ```
+
+From the barplot, the number of admissions at the start of the month (1st) to end of the month (30st) is approximately uniform. The decline at Day 31 is due to half of the months in a year not having a 31st calender day. 
 
 - Admission hour
 
@@ -114,6 +118,8 @@ admission %>%
   theme_minimal()
 ```
 
+There is a sharp peak in the plot around 7-8am, the time most doctors and staff come into work, resulting in an increase in admissions. There is another increase around 3-5pm, the time most staff are leaving from work and putting in final overnight admissions. 
+
 - Admission minute
 
 ```{r}
@@ -124,6 +130,8 @@ admission %>%
   labs(title = "Plot of Admission Minute", x = "Minute of Admission") +
   theme_minimal()
 ```
+
+From the plot, there are sharp spikes at 0, 15, 30, and 45 minutes. Since most of the data is inputted by a human, humans tend to round to the nearest quarter hour. 
 
 - Length of hospital stay 
 
@@ -139,6 +147,8 @@ admission %>%
   theme_minimal()
 ```
 
+The plot demonstrates that most patients stay in the hospital for 1-3 days. There are very few cases in which patients remain in the hospital for more than 50 days.
+
 - Admission type  
 
 ```{r}
@@ -148,6 +158,8 @@ admission %>%
   labs(title = "Barplot of Admission Type", x = "Admission Type") +
   theme_minimal()
 ```
+
+Most hospital admissions are due to emergency (unplanned) medical events; most people do not stay overnight in a hospital unless they have a planned invasive surgery or delivering a newborn. 
 
 - Number of admissions per patient  
 
@@ -163,6 +175,8 @@ admission %>%
   theme_minimal()
 ```
 
+From the plot, most patient are not readmitted into a hospital more than 1 or 2 times. 
+
 - Admission location  
 
 ```{r}
@@ -174,6 +188,8 @@ admission %>%
   theme_minimal()
 ```
 
+The admission location is the previous place of the patient prior to arriving at the hospital. Emergency room admit is the most common location, which matches the previous observation that emergency/ unplanned medical events are the most likley admission type. 
+
 - Insurance  
 
 ```{r}
@@ -184,6 +200,8 @@ admission %>%
   labs(title = "Plot of Patient Insurance", x = "Insurance") +
   theme_minimal()
 ```
+
+From the barplot, medicare and private insurance are the top two types of patient insurance.  
 
 - Language  
 
@@ -199,9 +217,10 @@ top_lang %>%
   ggplot(mapping = aes(x = LANGUAGE, y = n)) +
   geom_bar(stat = "identity", fill = "lightblue") +
   labs(title = "Top Ten Patient Languages", y = "count", x = "Language") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  theme_minimal()
 ```
+
+Most patients speak English, followed by Spanish. This observation matches the two most common spoken languages in the United States.
 
 - Religion  
 
@@ -215,6 +234,8 @@ admission %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+Of the the patients that responded with their religious background, most are Catholic, Protestant Quaker, and Jewish. 
+
 - Marital status 
 
 ```{r}
@@ -226,6 +247,8 @@ admission %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+Most patients are either married or single, with few widowed or divorced. There were no cases of patients with a life partner. 
 
 - Ethnicity  
 
@@ -244,6 +267,8 @@ top_eth %>%
   theme_minimal()
 ```
 
+Most patients are White, indicating that the data is not ethnicial diverse. 
+
 - Death year
 
 ```{r, warning=FALSE}
@@ -255,6 +280,7 @@ admission %>%
   theme_minimal()
 ```
 
+From the plot, there appears to be a decrease in the number of deaths every fifteen years. This spikey pattern could be further explored by analyzing what external events are occuring around the years with either a peak or trough. 
 
 ## Q2
 
@@ -265,7 +291,7 @@ Link the data in `ADMISSION.csv` and `PATIENTS.csv` (<https://mimic.physionet.or
 
 **Solution**
 
-First let's read and parse the `PATIENTS.csv` data.
+First let's read and parse the `PATIENTS.csv` data
 
 ```{r}
 patient <- read_csv("/home/203bdata/mimic-iii/PATIENTS.csv",
@@ -286,6 +312,8 @@ adm_unique <- admission %>%
 
 patient_adm <- inner_join(patient, adm_unique, by = "SUBJECT_ID")
 ```
+
+Let's summarize the following variables
 
 - Gender
 
@@ -321,7 +349,7 @@ patient_adm %>%
 
 **Solution:**
 
-First let's read and parse the `ICUSTAYS.csv` data.
+First let's read and parse the `ICUSTAYS.csv` data
 
 ```{r}
 icu <- read_csv("/home/203bdata/mimic-iii/ICUSTAYS.csv",
@@ -335,6 +363,8 @@ icu <- read_csv("/home/203bdata/mimic-iii/ICUSTAYS.csv",
   )
 )
 ```
+
+Let's summarize the following variables
 
 - Length of ICU stay
 
@@ -367,6 +397,8 @@ icu_uniq <- icu %>% distinct(SUBJECT_ID, .keep_all = TRUE)
 
 icu_patient_adm <- inner_join(icu_uniq, patient_adm, by = "SUBJECT_ID")
 ```
+
+Let's summarize the following variables
 
 - Gender
 
@@ -426,7 +458,9 @@ ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv",
 )
 ```
 
-Let's create the tibble:
+Let's create a tibble containing the first ICU stay of unique patients, the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission
+
+Let's first extract
 ```{r}
 first_ICU <- icu %>%
   select("SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "INTIME") %>%
