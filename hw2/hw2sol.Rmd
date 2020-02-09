@@ -1,0 +1,561 @@
+---
+title: "Biostat 203B Homework 2"
+author: "Ami Sheth"
+subtitle: Due Feb 7 @ 11:59PM
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+```{r}
+sessionInfo()
+```
+
+Use tidyverse (ggplot2, dplyr) to explore the [MIMIC-III](https://mimic.physionet.org) data introduced in [homework 1](https://ucla-biostat203b-2020winter.github.io/hw/hw1/hw1.html).
+
+### Prerequisites 
+
+Load tidyverse and lubridate:
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+## Q1
+
+Demographic information of the patients admitted into hospital is available in `ADMISSION.csv`. See <https://mimic.physionet.org/mimictables/admissions/> for details of each field in this file. Summarize following variables using appropriate graphs:   
+
+- admission year  
+- admission month  
+- admission week day  
+- admission hour  
+- length of hospital stay  
+- admission type  
+- number of admissions per patient  
+- admission location  
+- insurance  
+- language  
+- religion  
+- martial status  
+- ethnicity  
+- death 
+
+Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) is admitted into hospital multiple times. When summarizing some demographic information, it makes sense to summarize based on only unique patients. 
+
+**Solution:**
+
+Let's first display the first 10 lines of the `ADMISSION.csv` file
+
+```{bash}
+head /home/203bdata/mimic-iii/ADMISSIONS.csv
+```
+
+Let's parse the data
+
+```{r}
+admission <- read_csv("/home/203bdata/mimic-iii/ADMISSIONS.csv",
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    HADM_ID = col_integer(),
+    HOSPITAL_EXPIRE_FLAG = col_logical(),
+    HAS_CHARTEVENTS_DATA = col_logical()
+  )
+)
+```
+
+Let's summarize the following variables
+
+- Admission year
+
+```{r}
+admission %>%
+  mutate(adm_year = year(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_year)) +
+  geom_bar(color = "white", fill = "lightblue3") +
+  labs(title = "Barplot of Admission Year", x = "Year of Admission") +
+  theme_minimal()
+```
+
+The `ADMISSION.csv` covers a time period between June 1, 2001 and October 10, 2012. This 11-12 year time period is spread out over around 100 years. The plot does not display much pattern; however, further investigation can be done around 2135 year, where the highest peak occurs.
+
+- Admission month
+
+```{r}
+admission %>%
+  mutate(adm_month = month(ADMITTIME, label = T)) %>%
+  ggplot(mapping = aes(x = adm_month)) +
+  geom_bar(fill = "lightblue4") +
+  labs(title = "Barplot of Admission Month", x = "Month of Admission") +
+  theme_minimal()
+```
+
+There is no pattern observed from this bar plot, indicating that number of admissions is independent of month. 
+
+- Admission week day
+
+```{r}
+admission %>%
+  mutate(adm_day = day(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_day)) +
+  geom_bar(fill = "lightblue") +
+  labs(title = "Barplot of Admission Day", x = "Day of the Month") +
+  theme_minimal()
+```
+
+From the bar plot, the number of admissions at the start of the month (1st) to end of the month (30st) is approximately uniform. The decline at Day 31 is due to half of the months in a year not having a 31st calender day. 
+
+- Admission hour
+
+```{r}
+admission %>%
+  mutate(adm_hour = hour(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_hour)) +
+  geom_bar(fill = "cadetblue") +
+  labs(title = "Barplot of Admission Hour", x = "Hour of the Day") +
+  theme_minimal()
+```
+
+There is a sharp peak in the plot around 7-8am, the time most doctors and staff come into work, resulting in an increase in admissions. There is another increase around 3-5pm, the time most staff are leaving from work and putting in final overnight admissions. 
+
+- Admission minute
+
+```{r}
+admission %>%
+  mutate(adm_min = minute(ADMITTIME)) %>%
+  ggplot(mapping = aes(x = adm_min)) +
+  geom_freqpoly(binwidth = 2) +
+  labs(title = "Plot of Admission Minute", x = "Minute of Admission") +
+  theme_minimal()
+```
+
+From the plot, there are sharp spikes at 0, 15, 30, and 45 minutes. Since most of the data is inputted by a human, humans tend to round to the nearest quarter hour. 
+
+- Length of hospital stay 
+
+```{r}
+admission %>%
+  mutate(stay_len = as.numeric(as.duration(DISCHTIME - ADMITTIME) / 86400)) %>%
+  ggplot(mapping = aes(x = stay_len)) +
+  geom_density() +
+  labs(
+    title = "Plot of Length of Hospital Stay",
+    x = "Length of Stay (in days)"
+  ) +
+  theme_minimal()
+```
+
+The plot demonstrates that most patients stay in the hospital for 1-3 days. There are very few cases in which patients remain in the hospital for more than 50 days.
+
+- Admission type  
+
+```{r}
+admission %>%
+  ggplot(mapping = aes(x = ADMISSION_TYPE)) +
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Barplot of Admission Type", x = "Admission Type") +
+  theme_minimal()
+```
+
+Most hospital admissions are due to emergency (unplanned) medical events; most people do not stay overnight in a hospital unless they have a planned invasive surgery or delivering a newborn. 
+
+- Number of admissions per patient  
+
+```{r}
+admission %>%
+  count(SUBJECT_ID) %>%
+  ggplot(mapping = aes(x = n)) +
+  geom_bar(fill = "lightblue4") +
+  labs(
+    title = "Frequency of Admissions per Patient",
+    x = "Number of Admissions"
+  ) +
+  theme_minimal()
+```
+
+From the plot, most patients are not readmitted into a hospital more than 1 or 2 times. 
+
+- Admission location  
+
+```{r}
+admission %>%
+  ggplot(mapping = aes(x = ADMISSION_LOCATION)) +
+  geom_bar(fill = "lightblue") +
+  coord_flip() +
+  labs(title = "Barplot of Admission Location", x = "Admission Location") +
+  theme_minimal()
+```
+
+The admission location is the place of the patient prior to arriving at the hospital. Emergency room admit is the most common location, which matches the previous observation that emergency/ unplanned medical events are the most likely admission type. 
+
+- Insurance  
+
+```{r}
+admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  ggplot(mapping = aes(x = INSURANCE)) +
+  geom_bar(fill = "cadetblue") +
+  labs(title = "Plot of Patient Insurance", x = "Insurance") +
+  theme_minimal()
+```
+
+From the bar plot, medicare and private insurance are the top two types of patient insurance.  
+
+- Language  
+
+```{r}
+top_lang <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  count(LANGUAGE) %>%
+  na.omit(LANGUAGE) %>%
+  arrange(desc(n)) %>%
+  slice(1:10)
+
+top_lang %>%
+  ggplot(mapping = aes(x = LANGUAGE, y = n)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(title = "Top Ten Patient Languages", y = "count", x = "Language") +
+  theme_minimal()
+```
+
+Most patients speak English, followed by Spanish. This observation matches the two most common spoken languages in the United States.
+
+- Religion  
+
+```{r}
+admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  ggplot(mapping = aes(x = RELIGION)) +
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Plot of Patient Religion", x = "Religion") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Of the the patients that responded with their religious background, most are Catholic, Protestant Quaker, and Jewish. 
+
+- Marital status 
+
+```{r}
+admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  ggplot(mapping = aes(x = MARITAL_STATUS)) +
+  geom_bar(fill = "lightblue4") +
+  labs(title = "Plot of Marital Status", x = "Marital Status") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Most patients are either married or single, with few widowed or divorced. There were no cases of patients with a life partner. 
+
+- Ethnicity  
+
+```{r}
+top_eth <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  count(ETHNICITY) %>%
+  arrange(desc(n)) %>%
+  slice(1:10)
+
+top_eth %>%
+  ggplot(mapping = aes(x = ETHNICITY, y = n)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  coord_flip() +
+  labs(title = "Top Ten Patient Ethnicity", x = "Ethnicity", y = "count") +
+  theme_minimal()
+```
+
+Most patients are White, indicating that the data is not ethnically diverse. 
+
+- Death year
+
+```{r, warning=FALSE}
+admission %>%
+  mutate(death_year = year(DEATHTIME)) %>%
+  ggplot(mapping = aes(x = death_year)) +
+  geom_freqpoly(bins = 40) +
+  labs(title = "Plot of In-Hospital Deaths Each Year", x = "Year of Death") +
+  theme_minimal()
+```
+
+From the plot, there appears to be a decrease in the number of deaths every fifteen years. This spiky pattern could be further explored by analyzing what external events are occurring around the years with either a peak or trough. 
+
+## Q2
+
+Link the data in `ADMISSION.csv` and `PATIENTS.csv` (<https://mimic.physionet.org/mimictables/patients/>) and summarize following variables using appropriate graphs:  
+
+- gender  
+- age at admission 
+
+**Solution**
+
+First let's read and parse the `PATIENTS.csv` data
+
+```{r}
+patient <- read_csv("/home/203bdata/mimic-iii/PATIENTS.csv",
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    EXPIRE_FLAG = col_character()
+  )
+)
+```
+
+Let's merge the `ADMISSION.csv` and `PATIENTS.csv` together by `SUBJECT_ID`
+
+```{r}
+adm_unique <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "ADMITTIME")
+
+patient_adm <- inner_join(patient, adm_unique, by = "SUBJECT_ID")
+```
+
+Let's summarize the following variables
+
+- Gender
+
+```{r}
+patient_adm %>%
+  ggplot(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1)) +
+  geom_bar(stat = "count", fill = c("lightpink", "lightblue")) +
+  scale_x_discrete(label = c("Female", "Male")) +
+  labs(title = "Gender of Patients", y = "Proportion", x = "Gender") +
+  theme_minimal()
+```
+
+The number of male patients is about 20% higher that the number of female patients admitted to the hospital. In other words, less than half of the hospital's patients are females.
+
+- Age at admission 
+
+```{r}
+patient_adm %>%
+  mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>%
+  ggplot(mapping = aes(x = age_adm)) +
+  geom_histogram(bins = 50, fill = "cadetblue") +
+  labs(title = "Age of Patients", x = "Age (yrs)") +
+  theme_minimal()
+```
+
+The plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identification. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed. 
+
+## Q3
+
+`ICUSTAYS.csv` (<https://mimic.physionet.org/mimictables/icustays/>) contains data about Intensive Care Units (ICU) stays. Summarize following variables using appropriate graphs:  
+
+- length of ICU stay  
+- first ICU unit  
+- gender  
+- age  
+
+**Solution:**
+
+First let's read and parse the `ICUSTAYS.csv` data
+
+```{r}
+icu <- read_csv("/home/203bdata/mimic-iii/ICUSTAYS.csv",
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    HADM_ID = col_integer(),
+    ICUSTAY_ID = col_integer(),
+    FIRST_WARDID = col_integer(),
+    LAST_WARDID = col_integer()
+  )
+)
+```
+
+Let's summarize the following variables
+
+- Length of ICU stay
+
+```{r, warning = FALSE}
+icu %>%
+  ggplot(mapping = aes(x = LOS)) +
+  geom_histogram(bins = 100, fill = "lightblue3") +
+  labs(title = "Plot of Length of ICU Stay", x = "Length of Stay (in days)") +
+  theme_minimal()
+```
+
+The plot depicts that most patients stay in ICU for 2-5 days with a range of approximately 60 days. 
+
+- First ICU unit  
+
+```{r}
+icu %>%
+  ggplot(mapping = aes(x = FIRST_CAREUNIT)) +
+  geom_bar(fill = "lightblue4") +
+  labs(title = "Plot of First ICU Unit", x = "First ICU Unit") +
+  theme_minimal()
+```
+
+Most patients stay in MICU, medical intensive care unit, for their first ICU unit. The other first ICU units are have an approximately even number of patients. 
+
+Let's merge the `ADMISSION.csv`, `PATIENTS.csv`, `ICUSTAYS.csv` together by `SUBJECT_ID`
+
+```{r}
+adm_unique <- admission %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "ADMITTIME")
+
+icu_uniq <- icu %>% distinct(SUBJECT_ID, .keep_all = TRUE)
+
+icu_patient_adm <- inner_join(icu_uniq, patient_adm, by = "SUBJECT_ID")
+```
+
+Let's summarize the following variables
+
+- Gender
+
+```{r}
+icu_patient_adm %>%
+  ggplot(mapping = aes(x = factor(GENDER), y = ..prop.., group = 1)) +
+  geom_bar(stat = "count", fill = c("lightpink", "lightblue")) +
+  scale_x_discrete(label = c("Female", "Male")) +
+  labs(title = "Gender of Patients", y = "Proportion", x = "Gender") +
+  theme_minimal()
+```
+
+The number of male patients is more than half of the number of female patients staying in ICU.
+
+- Age  
+
+```{r}
+icu_patient_adm %>%
+  mutate(age_adm = as.numeric(as.duration(ADMITTIME - DOB), "years")) %>%
+  ggplot(mapping = aes(x = age_adm)) +
+  geom_histogram(bins = 50, fill = "cadetblue") +
+  labs(title = "Age of Patients", x = "Age (yrs)") +
+  theme_minimal()
+```
+
+Similar to the previous plot, this plot has an unexpected bars at 0 and 300 years because patients who were over 89 years old had their date of birth shifted for de-identification. The date of birth was set to be exactly 300 years before first admission. The median age for shifted patients is 91.4 according to MIMIC-III website. From ages 20-90 years old, the graph is slightly left-skewed for ICU patients.
+
+## Q4 
+
+`CHARTEVENTS.csv` (<https://mimic.physionet.org/mimictables/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `ITEMID` variable indicates a single measurement type in the database. The `VALUE` variable is the value measured for `ITEMID`. 
+
+`D_ITEMS.csv` (<https://mimic.physionet.org/mimictables/d_items/>) is the dictionary for the `ITEMID` in `CHARTEVENTS.csv`. Find potential values of `ITEMID` that correspond to systolic blood pressure, i.e., `LABEL` contains the string `systolic`. 
+
+Compile a tibble that contains the first ICU stay of unique patients, with the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission.
+
+**Solution:**
+
+Let's first read and parse the `CHARTEVENTS.csv` and `D_ITEMS.csv` data.
+
+```{r}
+charts <- read_csv("/home/203bdata/mimic-iii/CHARTEVENTS.csv",
+  col_types = cols(
+    ROW_ID = col_integer(),
+    SUBJECT_ID = col_integer(),
+    HADM_ID = col_integer(),
+    ICUSTAY_ID = col_integer(),
+    ITEMID = col_integer()
+  )
+)
+
+ditems <- read_csv("/home/203bdata/mimic-iii/D_ITEMS.csv",
+  col_types = cols(
+    ROW_ID = col_integer(),
+    ITEMID = col_integer(),
+    ABBREVIATION = col_character(),
+    UNITNAME = col_character(),
+    PARAM_TYPE = col_character(),
+    CONCEPTID = col_integer()
+  )
+)
+```
+
+Let's create a tibble containing the first ICU stay of unique patients, the patient's demographic information, the first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission
+
+Let's extract first ICU stay and gender of unique patients by 
+
+1. Ordering `INTIME`, the time in which patient was transferred to the ICU, to obtain first ICU stay 
+2. Removing any other observation from a patient with multiple ICU stays 
+3. Selecting `GENDER` from `PATIENTS.csv` and combining it into a tibble with first ICU stay 
+
+```{r}
+first_ICU <- icu %>%
+  select("SUBJECT_ID", "HADM_ID", "ICUSTAY_ID", "INTIME") %>%
+  arrange(SUBJECT_ID, INTIME) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE)
+
+patient_demo <- patient %>% select("SUBJECT_ID", "GENDER")
+tibble1 <- inner_join(first_ICU, patient_demo, by = "SUBJECT_ID")
+```
+
+Let's extract patient demographic information from `ADMISSION.csv` and combine it with the previously formed tibble by matching observations from patient demographics to the previous tibble  
+
+```{r}
+admission_demo <- admission %>%
+  select(
+    "SUBJECT_ID", "LANGUAGE", "RELIGION",
+    "MARITAL_STATUS", "ETHNICITY"
+  ) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE)
+
+tibble2 <- left_join(tibble1, admission_demo, by = "SUBJECT_ID")
+```
+
+Let's extract first systolic blood pressure measurement during ICU stay by 
+
+1. Finding all labels containing the word *systolic*
+2. Matching all patients in `CHARTEVENTS.csv` that have a measurement for systolic BP
+3. Ordering the data by `CHARTTIME`, which records the time at which an observation was made (the earliest `CHARTTIME` for systolic BP is assumed to be the closest proxy for first systolic BP measurement during ICU stay)
+4. Removing any other observation from a patient with multiple systolic BP during ICU stay
+
+The value of systolic BP is then added to the previous tibble. Observations from first ICU stay are retained even if patient does not have a value for systolic blood pressure.
+
+```{r}
+systolic_ID <- ditems %>%
+  filter(str_detect(LABEL, regex("systolic", ignore_case = TRUE))) %>%
+  select("ITEMID", "LABEL")
+
+charts_sys <- inner_join(charts, systolic_ID, by = "ITEMID")
+first_sys <- charts_sys %>%
+  select(
+    "SUBJECT_ID", "ICUSTAY_ID", "ITEMID", "CHARTTIME",
+    "LABEL", "VALUE", "VALUEUOM"
+  ) %>%
+  arrange(SUBJECT_ID, CHARTTIME) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "LABEL", "VALUE", "VALUEUOM")
+
+tibble3 <- left_join(tibble2, first_sys, by = "SUBJECT_ID")
+```
+
+Let's extract whether the patient died within 30 days of hospital admission by
+
+1. Calculating the number of days from hospital admission to in-hospital death
+2. Creating a Boolean to indicate whether patient died within 30 days
+3. Retaining observations from a patient only if they died on their first admission to match previously extracted information about **first** ICU stay and **first** systolic blood pressure 
+
+```{r}
+death_days <- as.numeric(
+  as.duration(admission$DEATHTIME - admission$ADMITTIME),
+  "days"
+)
+
+thirty_death <- admission %>%
+  mutate(DDAYS = case_when(
+    death_days >= 30 ~ FALSE,
+    death_days < 30 ~ TRUE
+  )) %>%
+  arrange(SUBJECT_ID) %>%
+  select("SUBJECT_ID", "DDAYS", "ADMITTIME", "DEATHTIME") %>%
+  arrange(SUBJECT_ID, ADMITTIME) %>%
+  distinct(SUBJECT_ID, .keep_all = TRUE) %>%
+  select("SUBJECT_ID", "DDAYS")
+```
+
+The final tibble contains 46,476 observations of unique patients' first ICU stay and then additionally information about demographics, first systolic blood pressure measurement during ICU stay, and whether the patient died within 30 days of hospital admission. The final tibble is not restricted to only patients that have values for each of these categories. 
+
+```{r}
+final_tibble <- inner_join(tibble3, thirty_death, by = "SUBJECT_ID")
+final_tibble %>%
+  select(-"INTIME") %>%
+  print(width = Inf)
+```
+
