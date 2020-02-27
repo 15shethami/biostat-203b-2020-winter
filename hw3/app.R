@@ -10,17 +10,17 @@ source("plotting_helper.R")
 
 # User interface ----
 ui <- fluidPage(
-  titlePanel("Map of Coronovirus Cases"),
+  titlePanel("Map of Coronavirus Cases in China"),
   
   sidebarLayout(
     sidebarPanel(
-      helpText("Create demographic maps with 
-               information from the JHU CSSE."),
+      helpText("Create map of China with 
+               information about coronavirus cases from the JHU CSSE."),
       
       selectInput("var", 
-                  label = "Choose a type of case to display",
-                  choices = c("confirmed", "recovered", "death"),
-                  selected = "confirmed"),
+                  label = "Choose a type of case",
+                  choices = c("Confirmed", "Recovered", "Death"),
+                  selected = "Confirmed"),
       
       dateInput("date", 
                 label = "Date",
@@ -36,12 +36,12 @@ ui <- fluidPage(
 server <- function(input, output) {
   # renderPlot is run once each time a user changes a widget that output$map depends on
   output$map <- renderPlot({
-    # data <- switch(input$var,
-    #                "Confirmed" = "confirmed",
-    #                "Recovered" = "recovered",
-    #                "Death" = "death")
+    data <- switch(input$var,
+                   "Confirmed" = "confirmed",
+                   "Recovered" = "recovered",
+                   "Death" = "death")
     
-    china_map(input$date, input$var)
+    china_map(input$date, data)
   })
 }
 
