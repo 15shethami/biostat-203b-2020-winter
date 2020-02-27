@@ -19,13 +19,13 @@ ui <- fluidPage(
       
       selectInput("var", 
                   label = "Choose a type of case to display",
-                  choices = c("Confirmed", "Recovered", "Death"),
-                  selected = "Confirmed"),
+                  choices = c("confirmed", "recovered", "death"),
+                  selected = "confirmed"),
       
       dateInput("date", 
-                "Date",
+                label = "Date",
                 min = "2020-01-22", 
-                max = as.character(Sys.Date())),
+                max = as.character(Sys.Date()))
     ),
     mainPanel(plotOutput("map"))
   )
@@ -36,13 +36,12 @@ ui <- fluidPage(
 server <- function(input, output) {
   # renderPlot is run once each time a user changes a widget that output$map depends on
   output$map <- renderPlot({
-    #data <- switch(input$var,
-                   #"Confirmed" = "confirmed",
-                   #"Recovered" = "recovered",
-                   #"Death" = "death")
-    #date <- switch(input$dates)
+    # data <- switch(input$var,
+    #                "Confirmed" = "confirmed",
+    #                "Recovered" = "recovered",
+    #                "Death" = "death")
     
-    china_map(date, data)
+    china_map(input$date, input$var)
   })
 }
 
