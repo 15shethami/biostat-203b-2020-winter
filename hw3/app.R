@@ -25,7 +25,8 @@ ui <- fluidPage(
       dateInput("date", 
                 label = "Select a date",
                 min = "2020-01-22", 
-                max = as.character(Sys.Date()))
+                max = as.character(Sys.Date()),
+                value = "2020-01-22")
     ),
     mainPanel(plotOutput("map1"), plotOutput("map2"))
   )
@@ -49,8 +50,13 @@ server <- function(input, output) {
                    "Confirmed" = "confirmed",
                    "Recovered" = "recovered",
                    "Death" = "death")
+    
+    color <- switch(input$var, 
+                    "Confirmed" = "steelblue3",
+                    "Recovered" = "goldenrod3",
+                    "Death" = "red4")
 
-    province_bar(input$date, data, input$var)
+    province_bar(input$date, data, color, input$var)
   })
 }
 

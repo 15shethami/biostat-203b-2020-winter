@@ -86,52 +86,6 @@ ncov_tbl <- confirmed_long %>%
 ncov_tbl %>% print(width = Inf)
 ```
 
-## Other data sources
-
-Other sources of data:  
-- Tencent (in Chinese): <https://news.qq.com/zt2020/page/feiyan.htm>  
-- R package `nCov2019`; install by `remotes::install_github("GuangchuangYu/nCov2019")`   
-- Shiny app [`coronavirus`](https://github.com/JohnCoene/coronavirus)   
-
-## Mapping China provinces
-
-Some useful resources for mapping:  
-- The book [_Geocomputation with R_](https://geocompr.robinlovelace.net). Especially [Chapter 8 Making Maps with R](https://geocompr.robinlovelace.net/adv-map.html).  
-- The book [_An Introduction to Spatial Analysis and Mapping in R_](https://bookdown.org/lexcomber/brunsdoncomber2e/). 
-
-### Use mapdata - **MAP IS TOO OLD**
-
-The package `mapdata` contains a data `china`. But the map seems out-dated. For example, Chongqing is sill a part of Sichuan province in this map.
-```{r}
-suppressMessages(library(mapdata))
-map("china", col = "gray40", ylim = c(18,54))
-```
-
-### Use GADM data - **THIS IS VERY SLOW**
-
-Download GADM data for China at <https://www.gadm.org/download_country_v3.html>. There are 4 levels of details to plot. We opt for the level 1 which is at the province level.
-```{r, eval = FALSE}
-library(sf)
-library(tidyverse)
-gadm36_CHN_1_sf <- readRDS("gadm36_CHN_1_sf.rds")
-ggplot(data = gadm36_CHN_1_sf) + 
-  geom_sf()
-```
-
-```{r, eval = FALSE}
-library("GADMTools")
-map <- gadm_sp_loadCountries("CHN", level = 1, basefile = "./")
-gadm_plot(map) + theme_light()
-```
-
-### Use shapefile from GADM - **THIS IS VERY SLOW**
-
-```{r, eval = FALSE}
-library(maptools)
-map <- rgdal::readOGR("gadm36_CHN_shp/gadm36_CHN_1.shp")
-plot(map)
-```
-
 ### Use GIS data from China
 
 A self note about installing `sf` package on CentOS 7: <https://gist.github.com/Hua-Zhou/6c11babe35437ce1ea8e4893a14d07c8>.
@@ -284,6 +238,7 @@ library(wesanderson)
 plotdate <- "2020-02-14"
 case <- "confirmed"
 
+
 ncov_tbl %>%
   filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
   filter(Date == plotdate, Case == case) %>%
@@ -292,17 +247,17 @@ ncov_tbl %>%
   right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) %>%
   ggplot() +
   geom_sf(mapping = aes(fill = Count, geometry = geometry)) +
-  # scale_fill_gradient(low = "white",
-  #                     high = "red",
+  # scale_colour_gradient(
   #                     trans = "log10",
-  #                     limits = c(1, 50000),
-  #                     breaks = c(1, 10, 100, 1000, 10000),
+  #                     limits = c(1, 60000),
+  #                     breaks = c(1, 100, 1000, 10000, 50000),
   #                     name = "") +
-  scale_fill_gradientn(colors = wes_palette("Zissou1", 100, type = "continuous"),
+  scale_fill_gradientn(colors = wes_palette("Zissou1", n = 100, type = "continuous"),
                        trans = "log10") + # can we find a better palette?
-  # #scale_fill_brewer(palette = "Dark2") + 
+  # scale_fill_brewer(palette = "teal", type = "seq") +
+  # scale_colour_gradientn(colours=rainbow(4), trans = "log10") +
   theme_bw() +
-  labs(title = str_c(case, " cases"), subtitle = plotdate)
+  labs(title = str_c("Map of ", case, " Cases in China"), subtitle = plotdate)
 ```
 
 
@@ -323,16 +278,31 @@ ncov_tbl %>%
 
 Counts by province on a specific date. Do an animation on date.
 ```{r}
-date <- "2020-02-18"
+colors <- function(case){
+  if (case == "confirmed"){
+    color <- "darkblue"
+  }
+  else if (case == "death"){
+    color <- "red"
+  }
+  else{
+    color <- "yellow"
+  }
+}
+
+plotdate <- "2020-02-18"
+case <- "recovered"
+
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan"), 
-         `Date` == date) %>%
-  group_by(`Province/State`) %>%
-  ggplot() +
-  geom_col(mapping = aes(x = `Province/State`, y = `Count`, fill = `Case`)) + 
-  scale_y_log10() +
-  labs(title = date) + 
-  theme(axis.text.x = element_text(angle = 90))
+  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(Date == plotdate, Case == case) %>%
+  group_by(`Province/State`) %>% 
+  ggplot(mapping = aes(x = `Province/State`, y = `Count`)) +
+  geom_col(fill = colors(case)) + 
+  scale_y_log10() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90)) + 
+  labs(title = str_c(case, " cases"), subtitle = plotdate)
 ```
 
 ## Animation
@@ -369,7 +339,7 @@ case = "confirmed"
   #                     breaks = c(1, 10, 100, 1000, 10000),
   #                     name = "") +
   scale_fill_gradientn(colours = wes_palette("Zissou1", 100, type = "continuous"),
-                       trans = "log10") + 
+                       trans = "log10") +
   theme_bw() +
   labs(title = str_c(case, " cases")))
 ```
@@ -389,17 +359,27 @@ anim_save("confirmed_anim.gif")
 
 ```{r}
 library(quantmod)
+
 stock <- getSymbols("^HSI", # S&P 500 (^GSPC), Dow Jones (^DJI), NASDAQ (^IXIC), Russell 2000 (^RUT), FTSE 100 (^FTSE), Nikkei 225 (^N225), HANG SENG INDEX (^HSI)
                     src = "yahoo", 
                     auto.assign = FALSE, 
-                    from = min(ncov_tbl$Date),
+                    #from = min(ncov_tbl$Date),
+                    from = "2019-12-01",
                     to = max(ncov_tbl$Date)) %>% 
   as_tibble(rownames = "Date") %>%
   mutate(Date = date(Date)) %>%
-  ggplot() + 
-  geom_line(mapping = aes(x = Date, y = HSI.Adjusted)) +
-  theme_bw()
+  ggplot(mapping = aes(x = Date, y = HSI.Adjusted)) + 
+  geom_line(colour = "red") + 
+  geom_point() + 
+  theme_bw() + 
+  labs(title = "Effects of Coronovirus on Stock Market") + 
+  transition_reveal(Date) 
+
 stock
+
+animate(anim, renderer = gifski_renderer())
+
+
 # chartSeries(stock, theme = chartTheme("white"),
 #            type = "line", log.scale = FALSE, TA = NULL)
 ```
