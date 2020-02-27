@@ -2,6 +2,7 @@
 library(shiny)
 library(maps)
 library(mapproj)
+library(quantmod)
 
 # Source helper functions -----
 source("reading_data.R")
@@ -26,9 +27,17 @@ ui <- fluidPage(
                 label = "Select a date",
                 min = "2020-01-22", 
                 max = as.character(Sys.Date()),
-                value = "2020-01-22")
+                value = "2020-01-22"),
+      
+      helpText("Select a stock to examine. 
+               Information will be collected from Yahoo finance."),
+      
+      selectInput("symb", 
+                  label = "Symbol",
+                  choices = c("^HSI", "Dow Jones", "NASDAQ"),
+                  selected = "^HSI")
     ),
-    mainPanel(plotOutput("map1"), plotOutput("map2"))
+    mainPanel(plotOutput("map1"), plotOutput("map2"), plotOutput("plot1"))
   )
 )
 
@@ -57,6 +66,15 @@ server <- function(input, output) {
                     "Death" = "red4")
 
     province_bar(input$date, data, color, input$var)
+  })
+  
+  output$plot1 <- renderPlot({
+    market <- switch(input$symb,
+                     "^HSI" = "^HSI",
+                     "Dow Jones" = "^DJI",
+                     "NASDAQ" = "^IXIC")
+    
+    stock_plot(market)
   })
 }
 

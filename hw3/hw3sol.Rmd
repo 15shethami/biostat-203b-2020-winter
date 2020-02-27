@@ -359,8 +359,12 @@ anim_save("confirmed_anim.gif")
 
 ```{r}
 library(quantmod)
+#"^HSI", Dow Jones (^DJI), NASDAQ (^IXIC), Russell 2000 (^RUT), FTSE 100 (^FTSE), Nikkei 225 (^N225), #HANG SENG INDEX (^HSI)
 
-stock <- getSymbols("^HSI", # S&P 500 (^GSPC), Dow Jones (^DJI), NASDAQ (^IXIC), Russell 2000 (^RUT), FTSE 100 (^FTSE), Nikkei 225 (^N225), HANG SENG INDEX (^HSI)
+stock <- function(symb){
+  y_name <- str_remove(symb, "[^[:punct:]]")
+  y_col <- str_c(y_name, ".Adjusted")
+  getSymbols(symb, 
                     src = "yahoo", 
                     auto.assign = FALSE, 
                     #from = min(ncov_tbl$Date),
@@ -368,22 +372,21 @@ stock <- getSymbols("^HSI", # S&P 500 (^GSPC), Dow Jones (^DJI), NASDAQ (^IXIC),
                     to = max(ncov_tbl$Date)) %>% 
   as_tibble(rownames = "Date") %>%
   mutate(Date = date(Date)) %>%
-  ggplot(mapping = aes(x = Date, y = HSI.Adjusted)) + 
-  geom_line(colour = "red") + 
-  geom_point() + 
-  theme_bw() + 
-  labs(title = "Effects of Coronovirus on Stock Market") + 
-  transition_reveal(Date) 
+  ggplot(mapping = aes(x = Date, y = eval(parse(text = y_col)))) +
+  geom_line(colour = "red") +
+  geom_point() +
+  theme_bw() +
+  labs(title = "Effects of Coronovirus on Stock Market", y = y_col)
+}
 
-stock
+stock("^IXIC")
 
-animate(anim, renderer = gifski_renderer())
+#+ 
+  #transition_reveal(Date) 
 
+animate(stock, renderer = gifski_renderer())
+anim_save("hsi_anim.gif")
 
 # chartSeries(stock, theme = chartTheme("white"),
 #            type = "line", log.scale = FALSE, TA = NULL)
 ```
-
-## Mapping countries
-
-TODO

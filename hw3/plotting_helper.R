@@ -29,3 +29,20 @@ province_bar <- function(plotdate, case, color, name){
     labs(title = str_c("Barplot of " , name, " Cases per Province"), subtitle = plotdate)
 }
 
+stock_plot <- function(symb){
+  y_name <- str_remove(symb, "[^[:punct:]]")
+  y_col <- str_c(y_name, ".Adjusted")
+  getSymbols(symb, 
+             src = "yahoo", 
+             auto.assign = FALSE,
+             from = "2019-12-01",
+             to = max(ncov_tbl$Date)) %>% 
+    as_tibble(rownames = "Date") %>%
+    mutate(Date = date(Date)) %>%
+    ggplot(mapping = aes(x = Date, y = eval(parse(text = y_col)))) +
+    geom_line(colour = "red") +
+    geom_point() +
+    theme_bw() +
+    labs(title = "Effects of Coronovirus on Stock Market", y = y_col)
+}
+
