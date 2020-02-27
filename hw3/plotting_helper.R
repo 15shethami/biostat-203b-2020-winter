@@ -1,6 +1,6 @@
 library(wesanderson)
 
-china_map <- function(plotdate, case){
+china_map <- function(plotdate, case, name){
   ncov_tbl %>%
     filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
     filter(Date == plotdate, Case == case) %>%
@@ -20,10 +20,10 @@ china_map <- function(plotdate, case){
                        trans = "log10") + # can we find a better palette?
   # #scale_fill_brewer(palette = "Dark2") + 
   theme_bw() +
-  labs(title = str_c(case, " cases"), subtitle = plotdate)
+  labs(title = str_c("Map of ", name, " Cases in China"), subtitle = plotdate)
 }
 
-province_bar <- function(plotdate, case){
+province_bar <- function(plotdate, case, name){
   ncov_tbl %>%
     filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
     filter(Date == plotdate, Case == case) %>%
@@ -33,6 +33,6 @@ province_bar <- function(plotdate, case){
     scale_y_log10() + 
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90)) + 
-    labs(title = str_c(case, " cases"), subtitle = plotdate)
+    labs(title = str_c("Barplot of " , name, " Cases per Province"), subtitle = plotdate)
 }
 

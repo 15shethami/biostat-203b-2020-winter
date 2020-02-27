@@ -10,12 +10,12 @@ source("plotting_helper.R")
 
 # User interface ----
 ui <- fluidPage(
-  titlePanel("Map of Coronavirus Cases in China"),
+  titlePanel("Coronavirus Cases in China"),
   
   sidebarLayout(
     sidebarPanel(
-      helpText("Create map of China with 
-               information about coronavirus cases from the JHU CSSE."),
+      helpText("Create plots with 
+               information about coronavirus cases in China from the JHU CSSE."),
       
       selectInput("var", 
                   label = "Choose a type of case",
@@ -23,7 +23,7 @@ ui <- fluidPage(
                   selected = "Confirmed"),
       
       dateInput("date", 
-                label = "Date",
+                label = "Select a date",
                 min = "2020-01-22", 
                 max = as.character(Sys.Date()))
     ),
@@ -41,7 +41,7 @@ server <- function(input, output) {
                    "Recovered" = "recovered",
                    "Death" = "death")
     
-    china_map(input$date, data)
+    china_map(input$date, data, input$var)
   })
   
   output$map2 <- renderPlot({
@@ -49,8 +49,8 @@ server <- function(input, output) {
                    "Confirmed" = "confirmed",
                    "Recovered" = "recovered",
                    "Death" = "death")
-    
-    province_bar(input$date, data)
+
+    province_bar(input$date, data, input$var)
   })
 }
 
