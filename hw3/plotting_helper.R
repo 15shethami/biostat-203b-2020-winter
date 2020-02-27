@@ -23,4 +23,16 @@ china_map <- function(plotdate, case){
   labs(title = str_c(case, " cases"), subtitle = plotdate)
 }
 
-#china_map("2020-02-14", "recovered")
+province_bar <- function(plotdate, case){
+  ncov_tbl %>%
+    filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+    filter(Date == plotdate, Case == case) %>%
+    group_by(`Province/State`) %>% 
+    ggplot(mapping = aes(x = `Province/State`, y = `Count`)) +
+    geom_col(fill = "darkblue") + 
+    scale_y_log10() + 
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90)) + 
+    labs(title = str_c(case, " cases"), subtitle = plotdate)
+}
+

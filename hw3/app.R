@@ -27,7 +27,7 @@ ui <- fluidPage(
                 min = "2020-01-22", 
                 max = as.character(Sys.Date()))
     ),
-    mainPanel(plotOutput("map"))
+    mainPanel(plotOutput("map1"), plotOutput("map2"))
   )
 )
 
@@ -35,13 +35,22 @@ ui <- fluidPage(
 # server function is run once each time a user visits the app
 server <- function(input, output) {
   # renderPlot is run once each time a user changes a widget that output$map depends on
-  output$map <- renderPlot({
+  output$map1 <- renderPlot({
     data <- switch(input$var,
                    "Confirmed" = "confirmed",
                    "Recovered" = "recovered",
                    "Death" = "death")
     
     china_map(input$date, data)
+  })
+  
+  output$map2 <- renderPlot({
+    data <- switch(input$var,
+                   "Confirmed" = "confirmed",
+                   "Recovered" = "recovered",
+                   "Death" = "death")
+    
+    province_bar(input$date, data)
   })
 }
 
