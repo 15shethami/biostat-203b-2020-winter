@@ -31,12 +31,11 @@ ui <- fluidPage(
       helpText("Select a stock to examine. 
                Information will be collected from Yahoo finance."),
       
-      selectInput("symb", 
-                  label = "Symbol",
-                  choices = c("^HSI", "Dow Jones", "NASDAQ"),
-                  selected = "^HSI")
+      radioButtons("symb", 
+                  label = "Stock",
+                  choices = c("HSI", "Dow Jones", "NASDAQ"))
     ),
-    mainPanel(plotOutput("map1"), plotOutput("map2"), imageOutput("plot1"))
+    mainPanel(plotOutput("map1"), plotOutput("map2"), imageOutput("plot1"), verbatimTextOutput("words"))
   )
 )
 
@@ -69,7 +68,7 @@ server <- function(input, output) {
   
   output$plot1 <- renderImage({
     market <- switch(input$symb,
-                     "^HSI" = "^HSI",
+                     "HSI" = "^HSI",
                      "Dow Jones" = "^DJI",
                      "NASDAQ" = "^IXIC")
     
@@ -77,7 +76,9 @@ server <- function(input, output) {
     stock_plot(market)
     list(src = "outfile.gif",
          contentType = "image/gif")
-  })
+  }, deleteFile = TRUE)
+  
+  output$words <- renderText("Dashed line marks the start of coronavirus data")
 }
 
 # Run app ----
