@@ -2,6 +2,8 @@
 library(shiny)
 library(maps)
 library(mapproj)
+library(gifski)
+library(png)
 
 # Source helper functions -----
 source("reading_data.R")

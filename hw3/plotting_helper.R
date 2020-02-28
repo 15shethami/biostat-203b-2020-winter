@@ -62,5 +62,5 @@ stock_plot <- function(symb) {
     labs(title = "Effects of Coronovirus on Stock Market", y = y_col) +
     geom_vline(xintercept = min(ncov_tbl$Date), linetype = "dotted") +
     transition_reveal(Date)
-  anim_save("outfile.gif", animate(plot))
+  anim_save("outfile.gif", animate(plot, renderer = gifski_renderer()))
 }
