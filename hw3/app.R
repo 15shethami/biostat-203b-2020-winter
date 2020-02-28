@@ -36,7 +36,7 @@ ui <- fluidPage(
                   choices = c("^HSI", "Dow Jones", "NASDAQ"),
                   selected = "^HSI")
     ),
-    mainPanel(plotOutput("map1"), plotOutput("map2"), plotOutput("plot1"))
+    mainPanel(plotOutput("map1"), plotOutput("map2"), imageOutput("plot1"))
   )
 )
 
@@ -67,13 +67,16 @@ server <- function(input, output) {
     province_bar(input$date, data, color, input$var)
   })
   
-  output$plot1 <- renderPlot({
+  output$plot1 <- renderImage({
     market <- switch(input$symb,
                      "^HSI" = "^HSI",
                      "Dow Jones" = "^DJI",
                      "NASDAQ" = "^IXIC")
     
+    outfile <- tempfile(fileext = '.gif')
     stock_plot(market)
+    list(src = "outfile.gif",
+         contentType = "image/gif")
   })
 }
 
