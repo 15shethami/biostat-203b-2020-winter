@@ -116,14 +116,16 @@ chn_map %>%
 ```{r}
 chn_map %>%
   ggplot() + 
-  geom_sf(mapping = aes(geometry = geometry), color = "black", fill = "white") + 
+  geom_sf(mapping = aes(geometry = geometry), 
+          color = "black", fill = "white") + 
   #geom_sf_label(mapping = aes(label = NAME)) + 
   theme_bw() # better for maps 
 ```
 These are the provinces available from the JHU sheets.
 ```{r}
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   distinct(`Province/State`, `Country/Region`) %>%
   print(n = Inf)
 ```
@@ -224,11 +226,13 @@ Try to join the virus data `ncov_tbl` and map data `chn_prov`.
 plotdate <- "2020-02-14"
 case <- "confirmed"
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   filter(Date == plotdate, Case == case) %>%
   group_by(`Province/State`) %>%  
   top_n(1, Date) %>%
-  right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) # join map and virus data
+  right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) 
+# join map and virus data
 ```
 
 Plot confirmed cases on a specific date:
@@ -240,7 +244,8 @@ case <- "confirmed"
 
 
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   filter(Date == plotdate, Case == case) %>%
   group_by(`Province/State`) %>%  
   top_n(1, Date) %>% # take the latest count on that date
@@ -252,7 +257,8 @@ ncov_tbl %>%
   #                     limits = c(1, 60000),
   #                     breaks = c(1, 100, 1000, 10000, 50000),
   #                     name = "") +
-  scale_fill_gradientn(colors = wes_palette("Zissou1", n = 100, type = "continuous"),
+  scale_fill_gradientn(
+    colors = wes_palette("Zissou1", n = 100, type = "continuous"),
                        trans = "log10") + # can we find a better palette?
   # scale_fill_brewer(palette = "teal", type = "seq") +
   # scale_colour_gradientn(colours=rainbow(4), trans = "log10") +
@@ -264,7 +270,8 @@ ncov_tbl %>%
 To plot the line graph of confirmed cases over time. You can do an animization of this over time.
 ```{r}
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   group_by(Date, Case) %>%  
   summarise(total_count = sum(Count)) %>%
   # print()
@@ -294,7 +301,8 @@ plotdate <- "2020-02-18"
 case <- "recovered"
 
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   filter(Date == plotdate, Case == case) %>%
   group_by(`Province/State`) %>% 
   ggplot(mapping = aes(x = `Province/State`, y = `Count`)) +
@@ -313,7 +321,8 @@ Resources about making animations in R:
 
 ```{r}
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   filter(Case == case) %>%
   right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) %>%
   print()
@@ -327,7 +336,8 @@ library(transformr)
 case = "confirmed"
 
 (p <- ncov_tbl %>%  
-  filter(`Country/Region` %in% c("Mainland China", "Macau", "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("Mainland China", "Macau", 
+                                 "Hong Kong", "Taiwan")) %>%
   filter(Case == case) %>%
   right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) %>%
   ggplot() + 
@@ -338,7 +348,8 @@ case = "confirmed"
   #                     limits = c(1, 100000),
   #                     breaks = c(1, 10, 100, 1000, 10000),
   #                     name = "") +
-  scale_fill_gradientn(colours = wes_palette("Zissou1", 100, type = "continuous"),
+  scale_fill_gradientn(
+    colours = wes_palette("Zissou1", 100, type = "continuous"),
                        trans = "log10") +
   theme_bw() +
   labs(title = str_c(case, " cases")))
@@ -359,9 +370,13 @@ anim_save("confirmed_anim.gif")
 
 ```{r}
 library(quantmod)
-#"^HSI", Dow Jones (^DJI), NASDAQ (^IXIC), Russell 2000 (^RUT), FTSE 100 (^FTSE), Nikkei 225 (^N225), #HANG SENG INDEX (^HSI)
+library(gganimate)
+library(transformr)
 
-stock <- function(symb){
+#"^HSI", Dow Jones (^DJI), NASDAQ (^IXIC), Russell 2000 (^RUT), 
+#FTSE 100 (^FTSE), Nikkei 225 (^N225), HANG SENG INDEX (^HSI)
+
+ stock <- function(symb){
   y_name <- str_remove(symb, "[^[:punct:]]")
   y_col <- str_c(y_name, ".Adjusted")
   getSymbols(symb, 
@@ -376,15 +391,19 @@ stock <- function(symb){
   geom_line(colour = "red") +
   geom_point() +
   theme_bw() +
-  labs(title = "Effects of Coronovirus on Stock Market", y = y_col)
+  labs(title = "Effects of Coronovirus on Stock Market", y = y_col) + 
+  geom_vline(xintercept=min(ncov_tbl$Date), linetype="dotted") #+ 
+  #transition_reveal(Date) 
+  annotate(geom ="rect", x =3, y = 24, label="Start of Data on Coronavirus",
+              color="red")
 }
 
-stock("^IXIC")
-
+plot <- stock("^IXIC")
+stock("")
 #+ 
   #transition_reveal(Date) 
 
-animate(stock, renderer = gifski_renderer())
+animate(plot, renderer = gifski_renderer())
 anim_save("hsi_anim.gif")
 
 # chartSeries(stock, theme = chartTheme("white"),

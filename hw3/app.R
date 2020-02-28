@@ -36,7 +36,7 @@ ui <- fluidPage(
                   choices = c("HSI", "Dow Jones", "NASDAQ")),
       
       helpText("Dashed line on Stock Market Plot marks the start of JHU CSSE 
-               data collection on coronavirus")
+               data on coronavirus")
     ),
     mainPanel(plotOutput("map1"), plotOutput("map2"), imageOutput("plot1"))
   )
