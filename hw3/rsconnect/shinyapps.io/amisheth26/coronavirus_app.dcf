@@ -1,0 +1,13 @@
+name: coronavirus_app
+title: coronavirus_app
+username:
+account: amisheth26
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1880794
+bundleId: 2838510
+url: https://amisheth26.shinyapps.io/coronavirus_app/
+when: 1582928525.63574
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: CHN_adm1.rds|hw3sol.Rmd|plotting_helper2.R|README.md|stock_app.R
