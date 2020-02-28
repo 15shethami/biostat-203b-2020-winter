@@ -2,7 +2,6 @@
 library(shiny)
 library(maps)
 library(mapproj)
-library(quantmod)
 
 # Source helper functions -----
 source("reading_data.R")

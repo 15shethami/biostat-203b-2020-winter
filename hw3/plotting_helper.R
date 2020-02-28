@@ -1,4 +1,6 @@
 library(wesanderson)
+library(quantmod)
+library(gganimate)
 
 china_map <- function(plotdate, case, name){
   ncov_tbl %>%
@@ -32,7 +34,7 @@ province_bar <- function(plotdate, case, color, name){
 stock_plot <- function(symb){
   y_name <- str_remove(symb, "[^[:punct:]]")
   y_col <- str_c(y_name, ".Adjusted")
-  getSymbols(symb, 
+  plot <- getSymbols(symb, 
              src = "yahoo", 
              auto.assign = FALSE,
              from = "2019-12-01",
@@ -43,6 +45,8 @@ stock_plot <- function(symb){
     geom_line(colour = "red") +
     geom_point() +
     theme_bw() +
-    labs(title = "Effects of Coronovirus on Stock Market", y = y_col)
+    labs(title = "Effects of Coronovirus on Stock Market", y = y_col) + 
+    geom_vline(xintercept=min(ncov_tbl$Date), linetype="dotted") + 
+    transition_reveal(Date)
+  animate(plot, renderer = gifski_renderer())
 }
-
