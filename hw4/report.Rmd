@@ -1,0 +1,22 @@
+---
+title: "informative title"
+author: "Ami Sheth"
+output: html_document
+---
+
+## Introduction
+
+
+## Data Preparation 
+
+
+## Data Visualization
+
+
+## Analysis 
+
+### 1. Logistics Regression 
+
+### 2. Neural Network 
+
+## Conclusion 
