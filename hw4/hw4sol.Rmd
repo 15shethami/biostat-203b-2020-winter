@@ -167,7 +167,7 @@ cohort_admissions %>%
 To add `age` (at admission) variable into the table. [The documentation for the patients table](https://mimic.physionet.org/mimictables/patients/) explains that patients of 90 years and older had their ages artificially inflated, so we remove these patients from the analysis.
 ```{r}
 cohort_admissions %>%
-  mutate(tt_death = date_part("day", dod) - date_part("day", dischtime)) %>%
+  mutate(tt_death = DATE_PART("day", dod - dischtime)) %>%
   mutate(mortality = tt_death <= 30) %>%
   mutate(age = date_part("year", admittime) - date_part("year", dob)) %>%
   filter(age < 90) %>%
@@ -276,6 +276,7 @@ cohort_admissions %>%
 
 # Gender 
 cohort_admissions %>%
+  distinct(subject_id, .keep_all = TRUE)
   ggplot(aes(x = gender)) + 
   geom_bar(fill = "lightblue3") + 
   labs(title = "Barplot of Gender", x = "Gender") +
@@ -322,7 +323,18 @@ cohort_admissions %>%
   head(n = 10) %>% 
   ggplot(aes(x = icd9_code, y = n)) + 
   geom_bar(stat = "identity", fill = "lightblue3") +
-  scale_x_discrete(labels = c("))
+  coord_flip() + 
+  scale_x_discrete(labels = c("Pneumococcal Septicemia",
+                              "Pneumococcal Pneumonia",
+                              "Klebsiella Pneumoniae",
+                              "Pseudomonal",
+                              "Methicillin Susceptible due to Staph",
+                              "Methicillin Resistant due to Staph",
+                              "Due to Gram-Negative Bacteria",
+                              "Bacterial, unspecified",
+                              "Pneumonia, unspecified",
+                              "Ventilator Associated"
+                              )) + 
   labs(title = "Top 10 Pneumonia Diagnosis", x = "Type of Pneumonia", 
        y = "count") +
   theme_minimal()
@@ -330,7 +342,10 @@ cohort_admissions %>%
 # Mortality 
 cohort_admissions %>% 
   ggplot(aes(x = mortality)) + 
-  geom_bar()
+  geom_bar(fill = "lightblue3") + 
+  scale_x_discrete(labels = c("Yes", "No", "NA")) + 
+  labs(title = "Barplot of Mortality after 30 Days of Discharge",
+       x = "Death")
 
 ```
 
