@@ -37,6 +37,7 @@ library(RPostgreSQL)
 library(tidyverse)
 library(lubridate)
 library(keras)
+
 ```
 
 Credentials for using PostgreSQL database. We are going to use username `postgres` with password `postgres` to access the `mimic` database in the schemee `mimiciii`. 
@@ -59,11 +60,6 @@ con <- dbConnect(RPostgreSQL::PostgreSQL(),
 # Set the default schema
 dbExecute(con, paste("SET search_path TO ", schema, sep=" "))
 con
-```
-
-List tables in the `mimic` database:
-```{r, eval=FALSE}
-dbListTables(con)
 ```
 
 ## Query and subsetting
@@ -378,15 +374,16 @@ smp_size <- floor(0.75 * nrow(final_cohort))
 
 ## Make all character variables into factors
 columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
-final_cohort[,columns] <- lapply(final_cohort[, columns], as.factor)
+final_cohort1 <- final_cohort
+final_cohort1[,columns] <- lapply(final_cohort1[, columns], as.factor)
 
 ## set the seed to make partition reproducible
 set.seed(12345)
 
 ## create train and test set
-train_ind <- sample(seq_len(nrow(final_cohort)), size = smp_size)
-train <- final_cohort[train_ind, ]
-test <- final_cohort[-train_ind, ]
+train_ind <- sample(seq_len(nrow(final_cohort1)), size = smp_size)
+train <- final_cohort1[train_ind, ]
+test <- final_cohort1[-train_ind, ]
 
 logit <- glm(mortality ~ drg_severity + principal_dx + gender + 
       ethnic_group, data = train, family = binomial)
@@ -397,14 +394,47 @@ mortality_hat <- predict(logit, test, type = "response")
 sq_diff <- (test$mortality - mortality_hat)^2
 (root_mse <- sqrt(mean(sq_diff, na.rm = TRUE)))
 
+final_cohort1
+
 ```
 
 ### Neural Network
 
 ```{r}
-x_train <- train %>% select(-"mortality")
-dim(x_train)
-y_train <- train %>% select("mortality")
+
+columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
+final_cohort2 <- final_cohort1
+final_cohort2[,columns] <- lapply(final_cohort2[, columns], as.numeric)
+final_cohort2$mortality <- ifelse(final_cohort2$mortality==TRUE, 1, 0)
+final_cohort2$principal_dx <- ifelse(final_cohort2$principal_dx==TRUE, 1, 0)
+
+## set the seed to make partition reproducible
+set.seed(12345)
+
+## create train and test set
+train_ind2 <- sample(seq_len(nrow(final_cohort2)), size = smp_size)
+train2 <- final_cohort2[train_ind2, ]
+test2 <- final_cohort2[-train_ind2, ]
+
+x_train <- train2 %>% select(-"mortality")
+y_train <- train2 %>% select("mortality")
+
+normalize <- function(x) {
+  num <- x - min(x)
+  denom <- max(x) - min(x)
+  return (num/denom)
+}
+
+# Normalize the data
+xtrain_norm <- as.data.frame(lapply(x_train, normalize))
+xtrain_norm <- as.matrix(xtrain_norm)
+dimnames(xtrain_norm) <- NULL
+
+y_train <- as.matrix(y_train)
+dimnames(y_train) <- NULL
+to_categorical(y_train)
+
+image(t(xtrain_norm[1, 8:1]), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
 
 ```
