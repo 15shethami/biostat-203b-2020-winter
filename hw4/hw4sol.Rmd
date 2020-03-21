@@ -36,6 +36,7 @@ library(DBI)
 library(RPostgreSQL)
 library(tidyverse)
 library(lubridate)
+library(keras)
 ```
 
 Credentials for using PostgreSQL database. We are going to use username `postgres` with password `postgres` to access the `mimic` database in the schemee `mimiciii`. 
@@ -387,16 +388,27 @@ train_ind <- sample(seq_len(nrow(final_cohort)), size = smp_size)
 train <- final_cohort[train_ind, ]
 test <- final_cohort[-train_ind, ]
 
-
-logit <- glm(mortality ~ drg_severity + icd9_code + principal_dx + gender + 
+logit <- glm(mortality ~ drg_severity + principal_dx + gender + 
       ethnic_group, data = train, family = binomial)
 
-predict(logit, test, type = "response")
+mortality_hat <- predict(logit, test, type = "response")
+
+## 
+sq_diff <- (test$mortality - mortality_hat)^2
+(root_mse <- sqrt(mean(sq_diff, na.rm = TRUE)))
 
 ```
 
-
 ### Neural Network
+
+```{r}
+x_train <- train %>% select(-"mortality")
+dim(x_train)
+y_train <- train %>% select("mortality")
+
+
+```
+
 
 ## CONSORT Flow Diagrams
 
