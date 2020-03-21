@@ -194,6 +194,7 @@ tbl(con, "admissions") %>%
 
 # collect(cohort_subjects)
 ```
+
 ```{r}
 tbl(con, "patients") %>%
   select(subject_id, gender) %>%
@@ -203,6 +204,7 @@ tbl(con, "patients") %>%
 
 # collect(cohort_subjects)
 ```
+
 ```{r}
 cohort_subjects %>%
   semi_join(cohort_admissions, by = "subject_id") %>%
@@ -369,12 +371,19 @@ final_cohort %>%
 
 ```{r}
 
+final_cohort1 <- final_cohort
+
+# Recode icd9_code
+top_5 <- c("486", "48241", "4829", "4821", "99731")
+final_cohort1$icd9_code <- ifelse(final_cohort1$icd9_code %in% top_5, 
+                                  TRUE, FALSE)
+
 ## 75% of the sample size
 smp_size <- floor(0.75 * nrow(final_cohort))
 
 ## Make all character variables into factors
-columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
-final_cohort1 <- final_cohort
+columns <- c("drg_severity", "gender", "ethnic_group")
+
 final_cohort1[,columns] <- lapply(final_cohort1[, columns], as.factor)
 
 ## set the seed to make partition reproducible
@@ -385,8 +394,10 @@ train_ind <- sample(seq_len(nrow(final_cohort1)), size = smp_size)
 train <- final_cohort1[train_ind, ]
 test <- final_cohort1[-train_ind, ]
 
-logit <- glm(mortality ~ drg_severity + principal_dx + gender + 
+logit <- glm(mortality ~ drg_severity + icd9_code + principal_dx + gender + 
       ethnic_group, data = train, family = binomial)
+
+# summary(logit)
 
 mortality_hat <- predict(logit, test, type = "response")
 
@@ -394,19 +405,16 @@ mortality_hat <- predict(logit, test, type = "response")
 sq_diff <- (test$mortality - mortality_hat)^2
 (root_mse <- sqrt(mean(sq_diff, na.rm = TRUE)))
 
-final_cohort1
 
 ```
 
 ### Neural Network
 
 ```{r}
-
-columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
-final_cohort2 <- final_cohort1
-final_cohort2[,columns] <- lapply(final_cohort2[, columns], as.numeric)
-final_cohort2$mortality <- ifelse(final_cohort2$mortality==TRUE, 1, 0)
-final_cohort2$principal_dx <- ifelse(final_cohort2$principal_dx==TRUE, 1, 0)
+final_cohort2 <- final_cohort %>% 
+  select(-c("subject_id", "hadm_id")) %>% 
+  select("mortality", everything()) %>% 
+  mutate(mortality = ifelse(mortality==TRUE, 1, 0))
 
 ## set the seed to make partition reproducible
 set.seed(12345)
@@ -415,27 +423,45 @@ set.seed(12345)
 train_ind2 <- sample(seq_len(nrow(final_cohort2)), size = smp_size)
 train2 <- final_cohort2[train_ind2, ]
 test2 <- final_cohort2[-train_ind2, ]
+train2
 
-x_train <- train2 %>% select(-"mortality")
-y_train <- train2 %>% select("mortality")
+rec_obj <- recipe(mortality ~ ., data = train2) %>%
+  step_discretize(age, options = list(cuts = 6)) %>%
+  step_dummy(all_nominal(), -all_outcomes()) %>%
+  step_center(all_predictors(), -all_outcomes()) %>%
+  step_scale(all_predictors(), -all_outcomes()) %>%
+  prep(data = train2)
 
-normalize <- function(x) {
-  num <- x - min(x)
-  denom <- max(x) - min(x)
-  return (num/denom)
-}
+x_train_tbl <- bake(rec_obj, newdata = train_tbl) %>% select(-mortality)
+x_test_tbl  <- bake(rec_obj, newdata = test_tbl) %>% select(-mortality)
 
-# Normalize the data
-xtrain_norm <- as.data.frame(lapply(x_train, normalize))
-xtrain_norm <- as.matrix(xtrain_norm)
-dimnames(xtrain_norm) <- NULL
+columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
+final_cohort2 <- final_cohort1
+final_cohort2[,columns] <- lapply(final_cohort2[, columns], as.numeric)
+final_cohort2$mortality <- ifelse(final_cohort2$mortality==TRUE, 1, 0)
+final_cohort2$principal_dx <- ifelse(final_cohort2$principal_dx==TRUE, 1, 0)
+
+
+
+
+
+x_train <- as.matrix(x_train)
+dimnames(x_train) <- NULL
 
 y_train <- as.matrix(y_train)
 dimnames(y_train) <- NULL
+
 to_categorical(y_train)
+#x_train[, 8:1]
+#image(t(x_train[, 8:1]), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
-image(t(xtrain_norm[1, 8:1]), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
+#model <- keras_model_sequential() 
+
+# Add layers to the model
+# model %>% 
+#     layer_dense(units = 8, activation = 'relu', input_shape = c(4)) %>% 
+#     layer_dense(units = 3, activation = 'softmax')
 
 ```
 
