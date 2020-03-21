@@ -316,6 +316,7 @@ final_cohort %>%
 ### Plots for Patients Relationship to Pneumonia 
 
 ```{r}
+
 # Drug Severity 
 final_cohort %>% 
   ggplot(aes(x = drg_severity)) + 
@@ -360,16 +361,42 @@ final_cohort %>%
   geom_bar(fill = "lightblue3") + 
   scale_x_discrete(labels = c("Yes", "No", "NA")) + 
   labs(title = "Barplot of Mortality after 30 Days of Discharge",
-       x = "Death")
+       x = "Death") + 
+  theme_minimal()
 
 ```
 
-## Close the connection to a database
+## Analytics
 
-Close the connection:
+### Logistic Regression
+
 ```{r}
-dbDisconnect(con)
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(final_cohort))
+
+## Make all character variables into factors
+columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
+final_cohort[,columns] <- lapply(final_cohort[, columns], as.factor)
+
+## set the seed to make partition reproducible
+set.seed(12345)
+
+## create train and test set
+train_ind <- sample(seq_len(nrow(final_cohort)), size = smp_size)
+train <- final_cohort[train_ind, ]
+test <- final_cohort[-train_ind, ]
+
+
+logit <- glm(mortality ~ drg_severity + icd9_code + principal_dx + gender + 
+      ethnic_group, data = train, family = binomial)
+
+predict(logit, test, type = "response")
+
 ```
+
+
+### Neural Network
 
 ## CONSORT Flow Diagrams
 
@@ -431,14 +458,4 @@ for (i in 1:num_of_boxes) {
   }
 ```
 
-## Install PostgreSQL and `RpostgreSQL` package on CentOS
-
-This is a note to myself (Dr. Hua Zhou). The postgres in yum is an old version. We want to install the most recent postgres and then build the `RpostgreSQL` package based on it. 
-
-1. Follow instructions in <https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-centos-7> to install PostgreSQL 11 on CentOS 7. 
-
-2. Issue following command to install `RPostgreSQL` in R:
-```{bash, eval = F}
-sudo R -e 'Sys.setenv(PG_INCDIR="/usr/pgsql-11/include/"); Sys.setenv(PG_LIBDIR="/usr/pgsql-11/lib/"); install.packages("RPostgreSQL")'
-```
 
