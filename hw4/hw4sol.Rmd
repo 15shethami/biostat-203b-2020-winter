@@ -269,28 +269,43 @@ cohort_admissions %>%
 # collect(cohort_admissions)
 ```
 
+Now we save the `cohort_admissions` into a csv file for data visualization and analysis:
+```{r}
+final_cohort <- collect(cohort_admissions)
+```
+
+## Close the connection to a database
+
+Close the connection:
+```{r}
+dbDisconnect(con)
+```
+
 ## Summarize Cohort via Data Visualization
 
-### Demographic Features 
+### Plots for Demographic Features 
 ```{r}
 
 # Gender 
-cohort_admissions %>%
-  distinct(subject_id, .keep_all = TRUE)
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
   ggplot(aes(x = gender)) + 
   geom_bar(fill = "lightblue3") + 
+  scale_x_discrete(labels = c("Female", "Male")) +
   labs(title = "Barplot of Gender", x = "Gender") +
   theme_minimal()
 
 # Age
-cohort_admissions %>% 
+final_cohort %>% 
+  distinct(subject_id, .keep_all = TRUE) %>% 
   ggplot(aes(x = age)) +
   geom_histogram(bins = 30, fill = "lightblue3") + 
   labs(title = "Histogram of Age", x = "Age") + 
   theme_minimal()
 
 # Ethnic Group
-cohort_admissions %>% 
+final_cohort %>% 
+  distinct(subject_id, .keep_all = TRUE) %>% 
   ggplot(aes(x = ethnic_group)) +
   geom_bar(fill = "lightblue3") + 
   labs(title = "Barplot of Ethnicity", x = "Ethnicity") + 
@@ -298,18 +313,18 @@ cohort_admissions %>%
 
 ```
 
-### Statistics about Patients Relationship to Pneumonia 
+### Plots for Patients Relationship to Pneumonia 
 
 ```{r}
 # Drug Severity 
-cohort_admissions %>% 
+final_cohort %>% 
   ggplot(aes(x = drg_severity)) + 
   geom_bar(fill = "lightblue3") + 
   labs(title = "Graph of Drug Severity", x = "Drug Severity") +
   theme_minimal()
 
 # Principle Disease
-cohort_admissions %>% 
+final_cohort %>% 
   ggplot(aes(x = principal_dx)) + 
   geom_bar(fill = "lightblue3") + 
   scale_x_discrete(labels = c("No", "Yes")) +
@@ -317,7 +332,7 @@ cohort_admissions %>%
   theme_minimal()
 
 # ICDA_Code 
-cohort_admissions %>%
+final_cohort %>%
   count(icd9_code) %>%
   arrange(desc(n)) %>%
   head(n = 10) %>% 
@@ -340,7 +355,7 @@ cohort_admissions %>%
   theme_minimal()
 
 # Mortality 
-cohort_admissions %>% 
+final_cohort %>% 
   ggplot(aes(x = mortality)) + 
   geom_bar(fill = "lightblue3") + 
   scale_x_discrete(labels = c("Yes", "No", "NA")) + 
