@@ -347,12 +347,98 @@ Close the connection to database
 dbDisconnect(con)
 ```
 
+
 ## Data Visualization
 
+### Plots for Demographic Features 
+
+```{r, echo = FALSE}
+
+# Gender 
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
+  ggplot(aes(x = gender)) + 
+  geom_bar(fill = "lightblue3") + 
+  scale_x_discrete(labels = c("Female", "Male")) +
+  labs(title = "Barplot of Gender", x = "Gender") +
+  theme_minimal()
+
+# Age
+final_cohort %>% 
+  distinct(subject_id, .keep_all = TRUE) %>% 
+  ggplot(aes(x = age)) +
+  geom_histogram(bins = 30, fill = "lightblue3") + 
+  labs(title = "Histogram of Age", x = "Age") + 
+  theme_minimal()
+
+# Ethnic Group
+final_cohort %>% 
+  distinct(subject_id, .keep_all = TRUE) %>% 
+  ggplot(aes(x = ethnic_group)) +
+  geom_bar(fill = "lightblue3") + 
+  labs(title = "Barplot of Ethnicity", x = "Ethnicity") + 
+  theme_minimal()
+
+```
+
+### Plots for Patients Relationship to Pneumonia 
+
+```{r, echo=FALSE}
+
+# Drug Severity 
+final_cohort %>% 
+  ggplot(aes(x = drg_severity)) + 
+  geom_bar(fill = "lightblue3") + 
+  labs(title = "Graph of Drug Severity", x = "Drug Severity") +
+  theme_minimal()
+
+# Principle Disease
+final_cohort %>% 
+  ggplot(aes(x = principal_dx)) + 
+  geom_bar(fill = "lightblue3") + 
+  scale_x_discrete(labels = c("No", "Yes")) +
+  labs(title = "Pneumonia as Principle Diagnosis", x = NULL) +
+  theme_minimal()
+
+# ICDA_Code 
+final_cohort %>%
+  count(icd9_code) %>%
+  arrange(desc(n)) %>%
+  head(n = 10) %>% 
+  ggplot(aes(x = icd9_code, y = n)) + 
+  geom_bar(stat = "identity", fill = "lightblue3") +
+  coord_flip() + 
+  scale_x_discrete(labels = c("Pneumococcal Septicemia",
+                              "Pneumococcal Pneumonia",
+                              "Klebsiella Pneumoniae",
+                              "Pseudomonal",
+                              "Methicillin Susceptible due to Staph",
+                              "Methicillin Resistant due to Staph",
+                              "Due to Gram-Negative Bacteria",
+                              "Bacterial, unspecified",
+                              "Pneumonia, unspecified",
+                              "Ventilator Associated"
+                              )) + 
+  labs(title = "Top 10 Pneumonia Diagnosis", x = "Type of Pneumonia", 
+       y = "count") +
+  theme_minimal()
+
+# Mortality 
+final_cohort %>% 
+  ggplot(aes(x = mortality)) + 
+  geom_bar(fill = "lightblue3") + 
+  scale_x_discrete(labels = c("Yes", "No", "NA")) + 
+  labs(title = "Barplot of Mortality after 30 Days of Discharge",
+       x = "Death") + 
+  theme_minimal()
+
+```
 
 ## Analysis 
 
-### 1. Logistics Regression 
+In order to predict the mortality rate 
+
+### 1. Logistic Regression 
 
 ### 2. Neural Network 
 
