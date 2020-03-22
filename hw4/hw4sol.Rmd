@@ -37,7 +37,7 @@ library(RPostgreSQL)
 library(tidyverse)
 library(lubridate)
 library(keras)
-tensorflow::install_tensorflow()
+# tensorflow::install_tensorflow()
 
 ```
 
@@ -411,7 +411,7 @@ sq_diff <- (test$mortality - mortality_hat)^2
 
 ### Neural Network
 
-```{r}
+```{r, eval = FALSE}
 final_cohort2 <- final_cohort1 %>%
   mutate(mortality = ifelse(mortality==TRUE, 1, 0),
          principal_dx = ifelse(principal_dx==TRUE, 1, 0),
@@ -471,9 +471,27 @@ y_test_cat <- to_categorical(y_test)
 
 ```
 
-```{r, eval = FALSE}
+```{r}
 # install.packages("neuralnet")
 library(neuralnet)
+
+final_cohort2 <- final_cohort1 %>%
+  mutate(mortality = ifelse(mortality==TRUE, 1, 0),
+         principal_dx = ifelse(principal_dx==TRUE, 1, 0),
+         icd9_code = ifelse(icd9_code==TRUE, 1, 0),
+         gender = ifelse(gender=="M", 1, 0),
+         drg_sev1 = ifelse(drg_severity==1, 1, 0),
+         drg_sev2 = ifelse(drg_severity==2, 1, 0),
+         drg_sev3 = ifelse(drg_severity==3, 1, 0),
+         drg_sev4 = ifelse(drg_severity==4, 1, 0),
+         white = ifelse(ethnic_group=="WHITE", 1, 0),
+         asian = ifelse(ethnic_group=="ASIAN", 1, 0),
+         black = ifelse(ethnic_group=="BLACK", 1, 0),
+         hispanic = ifelse(ethnic_group=="HISPANIC", 1, 0),
+         other = ifelse(ethnic_group=="OTHER", 1, 0),
+         age = scale(age)) %>% 
+  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>% 
+  select("mortality", everything())
 
 final_tt <- na.omit(final_cohort2)
 tt_size <- floor(0.75 * nrow(final_tt))
@@ -490,22 +508,23 @@ x_test <- ttest %>% select(-mortality)
 
 set.seed(12345)
 
-NN = neuralnet(mortality ~ age + icd9_code + gender + drg_sev1 + drg_sev2 +
+NN <- neuralnet(mortality ~ age + icd9_code + gender + drg_sev1 + drg_sev2 +
                  drg_sev3 + drg_sev4 + white + asian + black + hispanic + other, 
                ttrain, hidden = 3 , linear.output = T )
 
 
 # plot neural network
-plot(NN)
+
+plot(NN, rep = "best")
 
 # Prediction 
-predict_testNN = compute(NN, x_test)
-predict_testNN = (predict_testNN$net.result * 
+predict_testNN <- compute(NN, x_test)
+predict_testNN <- (predict_testNN$net.result * 
                     (max(final_tt$mortality) - min(final_tt$mortality))) + 
   min(final_tt$mortality)
 
 # Calculate Root Mean Square Error (RMSE)
-RMSE.NN = (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest)) ^ 0.5
+RMSE.NN <- (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest)) ^ 0.5
 RMSE.NN
 
 ```
