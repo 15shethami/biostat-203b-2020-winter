@@ -20,11 +20,68 @@ The MIMIC-III (Medical Information Mart for Intensive Care III) is a database co
 The MIMIC-III data is accessed by connecting to the PostgresSQL database. A cohort of patients directly admitted into MICU is extracted from the `transfer` table which contains information about the physical location of patients throughout their hospital stay. The `d_icd_diagnoses` table labels all diagnoses according to the Dictionary of International Classification of Diseases, 9th Revision (ICD-9 Codes). From this table, all ICD-9 codes related to pneumonia are stored and matched to patients' ICD-9 codes in the `diagnoses_icd` table, so that only patients diagnosed with pnuemonia remain. Pneumonia may not be listed as the principal diagnosis as explained in [the documentation for the `patients` table](https://mimic.physionet.org/mimictables/diagnoses_icd/). The `seq_num` field is a priority ranking for the diagnoses generated at the end of stay. To focus on patients for whom pneumonia was central to their hospitalization, records with pnuemonia in any of the first five diagnosis positions, according to `seq_num`, is kept. The dataset containing only patients from MICU is joined with the dataset containing only pneumonia patients to obtain a cohort restricted to pneumonia patients who were directly admitted into the MICU (`cohort_admissions`)
 
 A new logical variable (`principal_dx`) is added to `cohort_admissions` indicating whether pneumonia is the first diagnosis. A new variable (`drg_severity`) is also added classifying the severity of patients' ailments from 1-4 with 1 as least severe and 4 as most severe. This information is obtained from the `drgcodes` table, containing severity and mortality indicators for `DRG` codes from the All Payers Registry (APR). From the `admissions` table, admission time (`admittime`), discharge time (`dischtime`), date of birth (`dob)`, date of death (`dod`), and age at admission (`age`) are joined to `cohort_admissions` for patients who did not die in hospital and are younger than 90 years old. The dataset is restricted because patients older than 90 have artifically inflated ages to keep the data de-identifiable. Lastly, gender and ethnicity is joined to `cohort_admissions` from the `patients` table. 
+
 ### CONSORT Flow Diagram 
 
 The CONSORT flow diagram summarizes these steps to create the desired cohort:
 
+```{r plot, echo=FALSE}
+library(shape)
+library(diagram)
 
+# set margins and multiplot
+par(mfrow = c(1, 1))
+par(mar = c(0, 0, 0, 0))
+
+# initialise a plot device
+openplotmat()
+
+# position of boxes
+# 1st column indicates x axis position between 0 and 1
+# 2nd column indicates y axis position between 0 and 1
+# automatically assigns vertical position
+num_of_boxes <- 7
+auto_coords = coordinates(num_of_boxes)
+vert_pos = rev(auto_coords[,1])
+box_pos <- matrix(nrow = num_of_boxes, ncol = 2, data = 0)
+box_pos[1,] = c(0.25, vert_pos[1]) # 1st box
+box_pos[2,] = c(0.75, vert_pos[2]) # 2nd box
+box_pos[3,] = c(0.75, vert_pos[3]) # 3rd box
+box_pos[4,] = c(0.25, vert_pos[4]) # etc...
+box_pos[5,] = c(0.75, vert_pos[5])
+box_pos[6,] = c(0.75, vert_pos[6])
+box_pos[7,] = c(0.25, vert_pos[7])
+
+# content of boxes
+box_content <- matrix(nrow = num_of_boxes, ncol = 1, data = 0)
+box_content[1] = "All patients in MIMIC-III \n n = 58,976" # 1st box
+box_content[2] = "Exclude patients not admitted to MICU \n n = 38,683" # 2nd box
+box_content[3] = "Exclude no pneumonia patients or \n pneumonia not labeled as first five diagonses \n n = 16,508" # passes 80 lines but necessary for format
+box_content[4] = "Study Cohort with Drug Severity \n n = 5,963" # etc...
+box_content[5] = "Exclude patients who died in hospital \n n = 1,188" 
+box_content[6] = "Exclude patients of age > 90 \n n = 432"
+box_content[7] = "Study cohort with Gender and Ethnicity \n n = 4,542"
+
+
+# adjust the size of boxes to fit content
+box_x <- c(0.20, 0.25, 0.25, 0.20, 0.25, 0.25, 0.22)
+box_y <- c(0.07, 0.05, 0.07, 0.07, 0.05, 0.05, 0.07)
+
+# Draw the arrows
+straightarrow(from = c(box_pos[1,1],box_pos[2,2]), to = box_pos[2,], lwd = 1)  
+straightarrow(from = c(box_pos[1,1],box_pos[3,2]), to = box_pos[3,], lwd = 1) 
+straightarrow(from = c(box_pos[4,1],box_pos[5,2]), to = box_pos[5,], lwd = 1)
+straightarrow(from = c(box_pos[4,1],box_pos[6,2]), to = box_pos[6,], lwd = 1)
+straightarrow(from = box_pos[1,], to = box_pos[4,], lwd = 1)
+straightarrow(from = box_pos[4,], to = box_pos[7,], lwd = 1)
+
+# Draw the boxes
+for (i in 1:num_of_boxes) {
+  textrect(mid = box_pos[i,], radx = box_x[i], rady = box_y[i], 
+           lab = box_content[i], 
+           shadow.col = "grey")
+  }
+```
 
 
 ### Code

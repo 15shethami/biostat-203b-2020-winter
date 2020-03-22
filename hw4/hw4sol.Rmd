@@ -567,8 +567,7 @@ box_pos[7,] = c(0.20, vert_pos[7])
 box_content <- matrix(nrow = num_of_boxes, ncol = 1, data = 0)
 box_content[1] = "All patients in MIMIC-III \n n = 58,976" # 1st box
 box_content[2] = "Exclude patients not admitted to MICU \n n = 38,683" # 2nd box
-box_content[3] = "Exclude patients not admitted for pneumonia \n
- or pneumonia not labeled as first five diagonses \n n = 16,508" # 3rd box
+box_content[3] = "Exclude patients not diagnosed for pneumonia or \n pneumonia not labeled as first five diagonses \n n = 16,508" # passes 80 lines but necessary for format
 box_content[4] = "Study Cohort with drug severity \n n = 5,963" # etc...
 box_content[5] = "Exclude patients who died in hospital \n n = 1,188" 
 box_content[6] = "Exclude patients of age > 90 \n n = 432"
@@ -577,7 +576,7 @@ box_content[7] = "Study cohort with gender and ethnicity \n n = 4,542"
 
 # adjust the size of boxes to fit content
 box_x <- c(0.20, 0.25, 0.25, 0.20, 0.25, 0.25, 0.20)
-box_y <- c(0.07, 0.07, 0.07, 0.07, 0.07, 0.07, 0.07)
+box_y <- c(0.07, 0.05, 0.08, 0.07, 0.05, 0.05, 0.07)
 
 # Draw the arrows
 straightarrow(from = c(box_pos[1,1],box_pos[2,2]), to = box_pos[2,], lwd = 1)  
