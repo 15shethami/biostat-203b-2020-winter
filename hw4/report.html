@@ -854,8 +854,80 @@ cohort_subjects %&gt;%
 </div>
 <div id="analysis" class="section level2">
 <h2>Analysis</h2>
+<p>A predictive model for the 30-day mortality rate of patients admitted into MICU is developed using logistic regression and neural network. Their predictive performance is compared using root mean squared error (RMSE) and summarized via graphs.</p>
 <div id="logistic-regression" class="section level3">
 <h3>1. Logistic Regression</h3>
+<p>Before running a logistic regression, the ICD-9 Codes are recoded as an indicator variable with 1 representing the ICD-9 code for the patient is in the top five most common types of pneumonia. Additionally, all character variables are converted into factors. The <code>cohort_admissions</code> data is split into a training and test set with 75% of the observations in the training set. A logistic regression is performed on the training set with age, drug severity, ICD-9 code, principal drug, gender, and ethnic group as the covariates.</p>
+<pre class="r"><code>final_cohort1 &lt;- final_cohort
+
+# Recode icd9_code
+top_5 &lt;- c(&quot;486&quot;, &quot;48241&quot;, &quot;4829&quot;, &quot;4821&quot;, &quot;99731&quot;)
+final_cohort1$icd9_code &lt;- ifelse(final_cohort1$icd9_code %in% top_5, 
+                                  TRUE, FALSE)
+
+# 75% of the sample size
+smp_size &lt;- floor(0.75 * nrow(final_cohort))
+
+# Make all character variables into factors
+columns &lt;- c(&quot;drg_severity&quot;, &quot;gender&quot;, &quot;ethnic_group&quot;)
+
+final_cohort1[,columns] &lt;- lapply(final_cohort1[, columns], as.factor)
+
+# Set the seed to make partition reproducible
+set.seed(12345)
+
+# Create a training and testing set
+train_ind &lt;- sample(seq_len(nrow(final_cohort1)), size = smp_size)
+train &lt;- final_cohort1[train_ind, ]
+test &lt;- final_cohort1[-train_ind, ]
+
+# Build the logistic regression model
+logit &lt;- glm(mortality ~ age + drg_severity + icd9_code + principal_dx + 
+               gender + ethnic_group, data = train, family = binomial)
+
+summary(logit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = mortality ~ age + drg_severity + icd9_code + principal_dx + 
+##     gender + ethnic_group, family = binomial, data = train)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.0275  -0.7185  -0.6183  -0.4720   2.2641  
+## 
+## Coefficients:
+##                       Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)          -2.723631   0.559937  -4.864 1.15e-06 ***
+## age                   0.017671   0.004812   3.673 0.000240 ***
+## drg_severity2         0.548156   0.458040   1.197 0.231406    
+## drg_severity3         0.259765   0.202112   1.285 0.198703    
+## drg_severity4         0.594100   0.174722   3.400 0.000673 ***
+## icd9_codeTRUE         0.166709   0.182106   0.915 0.359957    
+## principal_dxTRUE     -0.288277   0.149787  -1.925 0.054282 .  
+## genderM               0.061041   0.127016   0.481 0.630816    
+## ethnic_groupBLACK    -0.635278   0.424734  -1.496 0.134730    
+## ethnic_groupHISPANIC -0.567465   0.529390  -1.072 0.283755    
+## ethnic_groupUNKNOWN   0.097476   0.446084   0.219 0.827028    
+## ethnic_groupWHITE    -0.361481   0.382526  -0.945 0.344668    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1662.8  on 1644  degrees of freedom
+## Residual deviance: 1621.6  on 1633  degrees of freedom
+##   (1761 observations deleted due to missingness)
+## AIC: 1645.6
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<pre class="r"><code># Predict mortality on the test set 
+mortality_hat &lt;- predict(logit, test, type = &quot;response&quot;)
+
+# Calculate RMSE
+sq_diff &lt;- (test$mortality - mortality_hat)^2
+root_mse &lt;- sqrt(mean(sq_diff, na.rm = TRUE))
+paste(&quot;Root MSE:&quot;, round(root_mse, 4), sep = &quot; &quot;)</code></pre>
+<pre><code>## [1] &quot;Root MSE: 0.3956&quot;</code></pre>
 </div>
 <div id="neural-network" class="section level3">
 <h3>2. Neural Network</h3>

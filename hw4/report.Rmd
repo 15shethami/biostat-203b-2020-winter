@@ -436,10 +436,60 @@ final_cohort %>%
 
 ## Analysis 
 
-In order to predict the mortality rate 
+A predictive model for the 30-day mortality rate of patients admitted into MICU is developed using logistic regression and neural network. Their predictive performance is compared using root mean squared error (RMSE) and summarized via graphs. 
 
 ### 1. Logistic Regression 
 
+Before running a logistic regression, the ICD-9 Codes are recoded as an indicator variable with 1 representing the ICD-9 code for the patient is in the top five most common types of pneumonia. Additionally, all character variables are converted into factors. The `cohort_admissions` data is split into a training and test set with 75% of the observations in the training set. A logistic regression is performed on the training set with age, drug severity, ICD-9 code, principal drug, gender, and ethnic group as the covariates.
+
+```{r}
+
+final_cohort1 <- final_cohort
+
+# Recode icd9_code
+top_5 <- c("486", "48241", "4829", "4821", "99731")
+final_cohort1$icd9_code <- ifelse(final_cohort1$icd9_code %in% top_5, 
+                                  TRUE, FALSE)
+
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(final_cohort))
+
+# Make all character variables into factors
+columns <- c("drg_severity", "gender", "ethnic_group")
+
+final_cohort1[,columns] <- lapply(final_cohort1[, columns], as.factor)
+
+# Set the seed to make partition reproducible
+set.seed(12345)
+
+# Create a training and testing set
+train_ind <- sample(seq_len(nrow(final_cohort1)), size = smp_size)
+train <- final_cohort1[train_ind, ]
+test <- final_cohort1[-train_ind, ]
+
+# Build the logistic regression model
+logit <- glm(mortality ~ age + drg_severity + icd9_code + principal_dx + 
+               gender + ethnic_group, data = train, family = binomial)
+
+summary(logit)
+
+# Predict mortality on the test set 
+mortality_hat <- predict(logit, test, type = "response")
+
+# Calculate RMSE
+sq_diff <- (test$mortality - mortality_hat)^2
+root_mse <- sqrt(mean(sq_diff, na.rm = TRUE))
+paste("Root MSE:", round(root_mse, 4), sep = " ")
+
+```
+
 ### 2. Neural Network 
+
+
+Install Neural Network Package if necessary
+```{r}
+if("neuralnet" %in% rownames(installed.packages()) == FALSE) {install.packages("neuralnet")}
+```
+
 
 ## Conclusion 

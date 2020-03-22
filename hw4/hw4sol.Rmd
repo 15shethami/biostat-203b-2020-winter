@@ -397,6 +397,7 @@ test <- final_cohort1[-train_ind, ]
 
 logit <- glm(mortality ~ age + drg_severity + icd9_code + principal_dx + 
                gender + ethnic_group, data = train, family = binomial)
+summary(logit)
 
 # summary(logit)
 
@@ -404,13 +405,15 @@ mortality_hat <- predict(logit, test, type = "response")
 
 ## 
 sq_diff <- (test$mortality - mortality_hat)^2
-(root_mse <- sqrt(mean(sq_diff, na.rm = TRUE)))
+root_mse <- sqrt(mean(sq_diff, na.rm = TRUE))
+paste("Root MSE:", round(root_mse, 4), sep = " ")
 
 
 ```
 
 ### Neural Network
 
+Attempt to use keras package for neural network
 ```{r, eval = FALSE}
 final_cohort2 <- final_cohort1 %>%
   mutate(mortality = ifelse(mortality==TRUE, 1, 0),
@@ -471,6 +474,7 @@ y_test_cat <- to_categorical(y_test)
 
 ```
 
+Another package for neural network
 ```{r}
 # install.packages("neuralnet")
 library(neuralnet)
