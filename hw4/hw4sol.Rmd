@@ -411,49 +411,51 @@ sq_diff <- (test$mortality - mortality_hat)^2
 ### Neural Network
 
 ```{r}
-final_cohort2 <- final_cohort %>% 
-  select(-c("subject_id", "hadm_id")) %>% 
-  select("mortality", everything()) %>% 
-  mutate(mortality = ifelse(mortality==TRUE, 1, 0))
+final_cohort2 <- final_cohort1 %>%
+  mutate(mortality = ifelse(mortality==TRUE, 1, 0),
+         principal_dx = ifelse(principal_dx==TRUE, 1, 0),
+         icd9_code = ifelse(icd9_code==TRUE, 1, 0),
+         gender = ifelse(gender=="M", 1, 0),
+         drg_sev1 = ifelse(drg_severity==1, 1, 0),
+         drg_sev2 = ifelse(drg_severity==2, 1, 0),
+         drg_sev3 = ifelse(drg_severity==3, 1, 0),
+         drg_sev4 = ifelse(drg_severity==4, 1, 0),
+         white = ifelse(ethnic_group=="WHITE", 1, 0),
+         asian = ifelse(ethnic_group=="ASIAN", 1, 0),
+         black = ifelse(ethnic_group=="BLACK", 1, 0),
+         hispanic = ifelse(ethnic_group=="HISPANIC", 1, 0),
+         other = ifelse(ethnic_group=="OTHER", 1, 0),
+         age = scale(age)) %>% 
+  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>% 
+  select("mortality", everything())
 
 ## set the seed to make partition reproducible
 set.seed(12345)
 
-## create train and test set
+## create train set
 train_ind2 <- sample(seq_len(nrow(final_cohort2)), size = smp_size)
 train2 <- final_cohort2[train_ind2, ]
-test2 <- final_cohort2[-train_ind2, ]
-train2
 
-rec_obj <- recipe(mortality ~ ., data = train2) %>%
-  step_discretize(age, options = list(cuts = 6)) %>%
-  step_dummy(all_nominal(), -all_outcomes()) %>%
-  step_center(all_predictors(), -all_outcomes()) %>%
-  step_scale(all_predictors(), -all_outcomes()) %>%
-  prep(data = train2)
-
-x_train_tbl <- bake(rec_obj, newdata = train_tbl) %>% select(-mortality)
-x_test_tbl  <- bake(rec_obj, newdata = test_tbl) %>% select(-mortality)
-
-columns <- c("drg_severity", "icd9_code", "gender", "ethnic_group")
-final_cohort2 <- final_cohort1
-final_cohort2[,columns] <- lapply(final_cohort2[, columns], as.numeric)
-final_cohort2$mortality <- ifelse(final_cohort2$mortality==TRUE, 1, 0)
-final_cohort2$principal_dx <- ifelse(final_cohort2$principal_dx==TRUE, 1, 0)
-
-
-
-
-
+x_train <- train2 %>% select(-mortality)
 x_train <- as.matrix(x_train)
 dimnames(x_train) <- NULL
 
+y_train <- train2 %>% select(mortality)
 y_train <- as.matrix(y_train)
 dimnames(y_train) <- NULL
 
-to_categorical(y_train)
-#x_train[, 8:1]
-#image(t(x_train[, 8:1]), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
+## create test set
+test2 <- final_cohort2[-train_ind2, ]
+
+x_test <- test2 %>% select(-mortality)
+x_test <- as.matrix(x_test)
+dimnames(x_test) <- NULL
+
+y_test <- test2 %>% select(mortality)
+y_test <- as.matrix(y_test)
+dimnames(y_test) <- NULL
+
+image(t(x_train), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
 
 #model <- keras_model_sequential() 
