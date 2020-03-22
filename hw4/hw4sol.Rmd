@@ -37,6 +37,7 @@ library(RPostgreSQL)
 library(tidyverse)
 library(lubridate)
 library(keras)
+tensorflow::install_tensorflow()
 
 ```
 
@@ -394,8 +395,8 @@ train_ind <- sample(seq_len(nrow(final_cohort1)), size = smp_size)
 train <- final_cohort1[train_ind, ]
 test <- final_cohort1[-train_ind, ]
 
-logit <- glm(mortality ~ drg_severity + icd9_code + principal_dx + gender + 
-      ethnic_group, data = train, family = binomial)
+logit <- glm(mortality ~ age + drg_severity + icd9_code + principal_dx + 
+               gender + ethnic_group, data = train, family = binomial)
 
 # summary(logit)
 
@@ -429,6 +430,7 @@ final_cohort2 <- final_cohort1 %>%
   select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>% 
   select("mortality", everything())
 
+final_cohort2
 ## set the seed to make partition reproducible
 set.seed(12345)
 
@@ -443,6 +445,7 @@ dimnames(x_train) <- NULL
 y_train <- train2 %>% select(mortality)
 y_train <- as.matrix(y_train)
 dimnames(y_train) <- NULL
+y_train_cat <- to_categorical(y_train)
 
 ## create test set
 test2 <- final_cohort2[-train_ind2, ]
@@ -454,8 +457,9 @@ dimnames(x_test) <- NULL
 y_test <- test2 %>% select(mortality)
 y_test <- as.matrix(y_test)
 dimnames(y_test) <- NULL
+y_test_cat <- to_categorical(y_test)
 
-image(t(x_train), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
+#image(t(x_train), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
 
 #model <- keras_model_sequential() 
@@ -467,6 +471,45 @@ image(t(x_train), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
 ```
 
+```{r, eval = FALSE}
+# install.packages("neuralnet")
+library(neuralnet)
+
+final_tt <- na.omit(final_cohort2)
+tt_size <- floor(0.75 * nrow(final_tt))
+
+tt_ind <- sample(seq_len(nrow(final_tt)), size = tt_size)
+ttrain <- final_tt[tt_ind, ]
+
+x_train <- ttrain %>% select(-mortality)
+
+## create test set
+ttest <- final_tt[-tt_ind, ]
+
+x_test <- ttest %>% select(-mortality)
+
+set.seed(12345)
+
+NN = neuralnet(mortality ~ age + icd9_code + gender + drg_sev1 + drg_sev2 +
+                 drg_sev3 + drg_sev4 + white + asian + black + hispanic + other, 
+               ttrain, hidden = 3 , linear.output = T )
+
+
+# plot neural network
+plot(NN)
+
+# Prediction 
+predict_testNN = compute(NN, x_test)
+predict_testNN = (predict_testNN$net.result * 
+                    (max(final_tt$mortality) - min(final_tt$mortality))) + 
+  min(final_tt$mortality)
+
+# Calculate Root Mean Square Error (RMSE)
+RMSE.NN = (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest)) ^ 0.5
+RMSE.NN
+
+```
+
 
 ## CONSORT Flow Diagrams
 
@@ -474,7 +517,7 @@ CONSORT Flow Diagrams can be used to plot the flow of data selection of a patien
 For more details, see:
 [The CONSORT Flow Diagram](http://www.consort-statement.org/consort-statement/flow-diagram). Following code shows an example. 
 
-```{r plot}
+```{r plot, eval=FALSE}
 library(shape)
 library(diagram)
 
