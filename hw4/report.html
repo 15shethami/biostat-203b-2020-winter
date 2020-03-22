@@ -367,13 +367,470 @@ summary {
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#data-preparation">Data Preparation</a><ul>
+<li><a href="#code">Code</a></li>
+</ul></li>
+<li><a href="#data-visualization">Data Visualization</a></li>
+<li><a href="#analysis">Analysis</a><ul>
+<li><a href="#logistics-regression">1. Logistics Regression</a></li>
+<li><a href="#neural-network">2. Neural Network</a></li>
+</ul></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+</div>
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>The MIMIC-III (Medical Information Mart for Intensive Care III) is a database containing deidentified health-related data for over 40,000 patients staying in critical care units of Beth Israel Denaconess Medical Center between 2001 and 2012. The database consists of forty different tables pertaining to hospital admissions, patient demographics, patient diagnosis, prescriptions, etc. The following analysis seeks to predict the mortality rate of patients diagnosed with pneumonia and admitted to the medical intensive care unit (MICU) thirty days after discharge.</p>
+<p>The MIMIC-III (Medical Information Mart for Intensive Care III) is a database containing deidentified health-related data for over 40,000 patients staying in critical care units of Beth Israel Denaconess Medical Center between 2001 and 2012. The database consists of forty different tables pertaining to hospital admissions, patient demographics, patient diagnosis, prescriptions, etc. The following analysis seeks to predict the mortality rate of patients diagnosed with pneumonia who were admitted to the medical intensive care unit (MICU) thirty days after discharge.</p>
 </div>
 <div id="data-preparation" class="section level2">
 <h2>Data Preparation</h2>
+<p>The MIMIC-III data is accessed by connecting to the PostgresSQL database. A cohort of patients directly admitted into MICU is extracted from the <code>transfer</code> table which contains information about the physical location of patients throughout their hospital stay. The <code>d_icd_diagnoses</code> table labels all diagnoses according to the Dictionary of International Classification of Diseases, 9th Revision (ICD-9 Codes). From this table, all ICD-9 codes related to pneumonia are stored and matched to patients’ ICD-9 codes in the <code>diagnoses_icd</code> table, so that only patients diagnosed with pnuemonia remain. Pneumonia may not be listed as the principal diagnosis as explained in <a href="https://mimic.physionet.org/mimictables/diagnoses_icd/">the documentation for the <code>patients</code> table</a>. The <code>seq_num</code> field is a priority ranking for the diagnoses generated at the end of stay. To focus on patients for whom pneumonia was central to their hospitalization, records with pnuemonia in any of the first five diagnosis positions, according to <code>seq_num</code>, is kept. The dataset containing only patients from MICU is joined with the dataset containing only pneumonia patients to obtain a cohort restricted to pneumonia patients who were directly admitted into the MICU (<code>cohort_admissions</code>)</p>
+<p>A new logical variable (<code>principal_dx</code>) is added to <code>cohort_admissions</code> indicating whether pneumonia is the first diagnosis. A new variable (<code>drg_severity</code>) is also added classifying the severity of patients’ ailments from 1-4 with 1 as least severe and 4 as most severe. This information is obtained from the <code>drgcodes</code> table, containing severity and mortality indicators for <code>DRG</code> codes from the All Payers Registry (APR). From the <code>admissions</code> table, admission time (<code>admittime</code>), discharge time (<code>dischtime</code>), date of birth (<code>dob)</code>, date of death (<code>dod</code>), and age at admission (<code>age</code>) are joined to <code>cohort_admissions</code> for patients who did not die in hospital and are younger than 90 years old. The dataset is restricted because patients older than 90 have artifically inflated ages to keep the data de-identifiable. Lastly, gender and ethnicity is joined to <code>cohort_admissions</code> from the <code>patients</code> table. The CONSORT flow diagram summarizes these steps to create the desired cohort:</p>
+<div id="code" class="section level3">
+<h3>Code</h3>
+<p>The following steps are performed to create a cohort of patients who were directly admitted into MICU and were diagnosed with pneumonia.</p>
+<p>Load database libraries:</p>
+<pre class="r"><code>library(DBI)
+library(RPostgreSQL)
+library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.2.1     ✓ purrr   0.3.3
+## ✓ tibble  2.1.3     ✓ dplyr   0.8.4
+## ✓ tidyr   1.0.2     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.4.0</code></pre>
+<pre><code>## ── Conflicts ───────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(lubridate)</code></pre>
+<pre><code>## 
+## Attaching package: 'lubridate'</code></pre>
+<pre><code>## The following object is masked from 'package:base':
+## 
+##     date</code></pre>
+<p>Connect to PostgreSQL</p>
+<pre class="r"><code># Load configuration settings
+dbdriver &lt;- 'PostgreSQL'
+user  &lt;- 'postgres'
+password &lt;- 'postgres'
+dbname &lt;- 'mimic'
+schema &lt;- 'mimiciii'
+
+# Connect to the database using the configuration settings
+con &lt;- dbConnect(RPostgreSQL::PostgreSQL(), 
+                 dbname = dbname,
+                 user = user, 
+                 password = password)
+
+# Set the default schema
+dbExecute(con, paste(&quot;SET search_path TO &quot;, schema, sep=&quot; &quot;))</code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>con</code></pre>
+<pre><code>## &lt;PostgreSQLConnection&gt;</code></pre>
+<p>Create a (query) table of patients who were directly admitted into MICU</p>
+<pre class="r"><code>tbl(con, &quot;transfers&quot;) %&gt;%
+  select(subject_id, hadm_id, prev_careunit, curr_careunit) %&gt;%
+  filter(is.na(prev_careunit) &amp; curr_careunit == &quot;MICU&quot;) %&gt;%
+  select(subject_id, hadm_id) %&gt;%
+  distinct() %&gt;%
+  print() -&gt; micu_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 2]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id
+##         &lt;int&gt;   &lt;int&gt;
+##  1        711  120522
+##  2      20863  195453
+##  3      97716  178708
+##  4      60131  190090
+##  5      19705  155006
+##  6      11342  165519
+##  7      74147  149842
+##  8      18958  122966
+##  9       7681  175048
+## 10      65665  170768
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(micu_admissions)</code></pre>
+<p>Restrict to pneumonia patients; to find all possible ICD-9 codes related to pneumonia, search for string <code>pneumonia</code> in the <code>long_title</code> of table <code>d_icd_diagnoses</code></p>
+<pre class="r"><code>tbl(con, &quot;d_icd_diagnoses&quot;) %&gt;%
+  filter(str_detect(tolower(long_title), &quot;pneumonia&quot;)) %&gt;%
+  print() -&gt; pneu_codes</code></pre>
+<pre><code>## # Source:   lazy query [?? x 4]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    row_id icd9_code short_title       long_title                                
+##     &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;             &lt;chr&gt;                                     
+##  1    174 01166     TB pneumonia-oth… Tuberculous pneumonia [any form], tubercl…
+##  2    245 00322     Salmonella pneum… Salmonella pneumonia                      
+##  3    168 01160     TB pneumonia-uns… Tuberculous pneumonia [any form], unspeci…
+##  4    169 01161     TB pneumonia-no … Tuberculous pneumonia [any form], bacteri…
+##  5    170 01162     TB pneumonia-exa… Tuberculous pneumonia [any form], bacteri…
+##  6    171 01163     TB pneumonia-mic… Tuberculous pneumonia [any form], tubercl…
+##  7    172 01164     TB pneumonia-cul… Tuberculous pneumonia [any form], tubercl…
+##  8    173 01165     TB pneumonia-his… Tuberculous pneumonia [any form], tubercl…
+##  9    603 0551      Postmeasles pneu… Postmeasles pneumonia                     
+## 10    651 0382      Pneumococcal sep… Pneumococcal septicemia [Streptococcus pn…
+## # … with more rows</code></pre>
+<p><code>diagnoses_icd</code> table stores the diagnosis of each admission. We use <code>semi_join()</code> to keep the rows in <code>diagnoses_icd</code> that match the ICD-9 codes related to pneumonia:</p>
+<pre class="r"><code>tbl(con, &quot;diagnoses_icd&quot;) %&gt;%
+  semi_join(pneu_codes, by = &quot;icd9_code&quot;) %&gt;%
+  print() -&gt; pneu_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 5]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    row_id subject_id hadm_id seq_num icd9_code
+##     &lt;int&gt;      &lt;int&gt;   &lt;int&gt;   &lt;int&gt; &lt;chr&gt;    
+##  1 318345      28120  120409       2 01164    
+##  2   3051        250  124271       1 0382     
+##  3  12412       1068  174792       2 0382     
+##  4  12601       1085  198028       1 0382     
+##  5  37477       3370  176021       2 0382     
+##  6  25929       2322  169179       2 0382     
+##  7  58698       5242  175154       1 0382     
+##  8  54397       4883  123172       2 0382     
+##  9  19561       1754  103405       1 0382     
+## 10  46483       4140  170984       1 0382     
+## # … with more rows</code></pre>
+<pre class="r"><code> # collect(pneu_admissions)</code></pre>
+<p>Include records with pneumonia in any of the first five diagnosis positions, according to the <code>seq_num</code> field. <code>group_by()</code> to limit the query to the first pneumonia diagnosis for each admission</p>
+<pre class="r"><code>pneu_admissions %&gt;%
+  filter(seq_num &lt;= 5) %&gt;%
+  group_by(subject_id, hadm_id) %&gt;%
+  filter(min_rank(seq_num) &lt;= 1) %&gt;%
+  ungroup() %&gt;%
+  select(subject_id, hadm_id, icd9_code, seq_num) %&gt;%
+  print() -&gt; pneu_admissions</code></pre>
+<pre><code>## Warning: `lang_name()` is deprecated as of rlang 0.2.0.
+## Please use `call_name()` instead.
+## This warning is displayed once per session.</code></pre>
+<pre><code>## Warning: `lang()` is deprecated as of rlang 0.2.0.
+## Please use `call2()` instead.
+## This warning is displayed once per session.</code></pre>
+<pre><code>## # Source:   lazy query [?? x 4]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id icd9_code seq_num
+##         &lt;int&gt;   &lt;int&gt; &lt;chr&gt;       &lt;int&gt;
+##  1         31  128652 486             4
+##  2         36  165660 486             4
+##  3         41  101757 48241           4
+##  4         68  108329 486             2
+##  5         68  170467 486             2
+##  6         85  112077 486             2
+##  7         94  140037 486             3
+##  8        101  175533 48240           3
+##  9        103  130744 486             4
+## 10        105  128744 486             2
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(pneu_admissions)</code></pre>
+<p><code>inner_join</code> the table of admissions to MICU and the table of admissions that include pneumonia diagnosis</p>
+<pre class="r"><code>micu_admissions %&gt;%
+  inner_join(pneu_admissions, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+  print() -&gt; cohort_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 4]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id icd9_code seq_num
+##         &lt;int&gt;   &lt;int&gt; &lt;chr&gt;       &lt;int&gt;
+##  1         31  128652 486             4
+##  2         36  165660 486             4
+##  3         68  108329 486             2
+##  4         68  170467 486             2
+##  5         85  112077 486             2
+##  6         94  140037 486             3
+##  7        101  175533 48240           3
+##  8        105  128744 486             2
+##  9        109  172335 486             2
+## 10        111  155897 486             3
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_admissions)</code></pre>
+<p>Create a logical variable indicating the pneumonia is the principal diagonosis or not (according to <code>seq_num</code>)</p>
+<pre class="r"><code>cohort_admissions %&gt;%
+  mutate(principal_dx = seq_num == 1) %&gt;%
+  select(-seq_num) %&gt;%
+  print() -&gt; cohort_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 4]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id icd9_code principal_dx
+##         &lt;int&gt;   &lt;int&gt; &lt;chr&gt;     &lt;lgl&gt;       
+##  1         31  128652 486       FALSE       
+##  2         36  165660 486       FALSE       
+##  3         68  108329 486       FALSE       
+##  4         68  170467 486       FALSE       
+##  5         85  112077 486       FALSE       
+##  6         94  140037 486       FALSE       
+##  7        101  175533 48240     FALSE       
+##  8        105  128744 486       FALSE       
+##  9        109  172335 486       FALSE       
+## 10        111  155897 486       FALSE       
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_admissions)</code></pre>
+<p>Pull the drug severity information from <code>drgcodes</code> and right-join it to our query table</p>
+<pre class="r"><code>tbl(con, &quot;drgcodes&quot;) %&gt;%
+  filter(str_detect(drg_type, &quot;APR&quot;)) %&gt;%
+  select(subject_id, hadm_id, drg_severity) %&gt;%
+  right_join(cohort_admissions, by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)) %&gt;%
+  mutate(drg_severity = ifelse(is.na(drg_severity), 1, drg_severity)) %&gt;%
+  print() -&gt; cohort_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 5]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id drg_severity icd9_code principal_dx
+##         &lt;int&gt;   &lt;int&gt;        &lt;dbl&gt; &lt;chr&gt;     &lt;lgl&gt;       
+##  1         31  128652            1 486       FALSE       
+##  2         36  165660            3 486       FALSE       
+##  3         36  165660            3 486       FALSE       
+##  4         68  108329            4 486       FALSE       
+##  5         68  170467            4 486       FALSE       
+##  6         85  112077            3 486       FALSE       
+##  7         85  112077            3 486       FALSE       
+##  8         94  140037            2 486       FALSE       
+##  9        101  175533            1 48240     FALSE       
+## 10        105  128744            3 486       FALSE       
+## # … with more rows</code></pre>
+<pre class="r"><code> # collect(cohort_admissions)</code></pre>
+<p>Pull the admission time <code>admittime</code>, discharge time <code>dischtime</code>, date of birth <code>dob</code>, and date of death <code>dod</code>; keep patients who did not die in hospital</p>
+<pre class="r"><code>cohort_admissions %&gt;%
+  left_join(
+    select(tbl(con, &quot;admissions&quot;),
+           subject_id, hadm_id, admittime, dischtime, hospital_expire_flag
+    ), by = c(&quot;subject_id&quot;, &quot;hadm_id&quot;)
+  ) %&gt;%
+  filter(hospital_expire_flag == 0) %&gt;% # patients who did not die in hospital
+  select(-hospital_expire_flag) %&gt;%
+  left_join(
+    select(tbl(con, &quot;patients&quot;), subject_id, dob, dod),
+    by = &quot;subject_id&quot;
+  ) %&gt;%
+  print(width = Inf) -&gt; cohort_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 9]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id drg_severity icd9_code principal_dx admittime          
+##         &lt;int&gt;   &lt;int&gt;        &lt;dbl&gt; &lt;chr&gt;     &lt;lgl&gt;        &lt;dttm&gt;             
+##  1         36  165660            3 486       FALSE        2134-05-10 11:30:00
+##  2         36  165660            3 486       FALSE        2134-05-10 11:30:00
+##  3         68  108329            4 486       FALSE        2174-01-04 22:21:00
+##  4         68  170467            4 486       FALSE        2173-12-15 16:16:00
+##  5         85  112077            3 486       FALSE        2167-07-25 18:49:00
+##  6         85  112077            3 486       FALSE        2167-07-25 18:49:00
+##  7         94  140037            2 486       FALSE        2176-09-02 14:22:00
+##  8        105  128744            3 486       FALSE        2189-02-21 01:45:00
+##  9        109  172335            4 486       FALSE        2141-09-18 10:32:00
+## 10        109  172335            4 486       FALSE        2141-09-18 10:32:00
+##    dischtime           dob                 dod                
+##    &lt;dttm&gt;              &lt;dttm&gt;              &lt;dttm&gt;             
+##  1 2134-05-20 13:16:00 2061-08-17 00:00:00 NA                 
+##  2 2134-05-20 13:16:00 2061-08-17 00:00:00 NA                 
+##  3 2174-01-19 11:30:00 2132-02-29 00:00:00 2174-02-11 00:00:00
+##  4 2174-01-03 18:30:00 2132-02-29 00:00:00 2174-02-11 00:00:00
+##  5 2167-07-30 15:24:00 2090-09-18 00:00:00 2167-09-12 00:00:00
+##  6 2167-07-30 15:24:00 2090-09-18 00:00:00 2167-09-12 00:00:00
+##  7 2176-09-25 13:15:00 2101-09-20 00:00:00 2178-08-17 00:00:00
+##  8 2189-02-25 10:05:00 2153-09-26 00:00:00 2190-02-15 00:00:00
+##  9 2141-09-24 13:53:00 2117-08-07 00:00:00 2142-08-30 00:00:00
+## 10 2141-09-24 13:53:00 2117-08-07 00:00:00 2142-08-30 00:00:00
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_admissions)</code></pre>
+<p>Add <code>age</code> (at admission) variable into the table; remove patients older than 90 yrs from the analysis</p>
+<pre class="r"><code>cohort_admissions %&gt;%
+  mutate(tt_death = DATE_PART(&quot;day&quot;, dod - dischtime)) %&gt;%
+  mutate(mortality = tt_death &lt;= 30) %&gt;%
+  mutate(age = date_part(&quot;year&quot;, admittime) - date_part(&quot;year&quot;, dob)) %&gt;%
+  filter(age &lt; 90) %&gt;%
+  mutate(age = age - ifelse(
+    date_part(&quot;month&quot;, admittime) &lt; date_part(&quot;month&quot;, dob) |
+      (
+        date_part(&quot;month&quot;, admittime) == date_part(&quot;month&quot;, dob) &amp;
+          date_part(&quot;day&quot;, admittime) &lt; date_part(&quot;day&quot;, dob)
+      ),
+    1,
+    0
+  )) %&gt;%
+  select(-admittime, -dischtime, -dob, -dod, -tt_death) %&gt;%
+  select(subject_id, hadm_id, age, mortality, everything()) %&gt;%
+  print() -&gt; cohort_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 7]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id   age mortality drg_severity icd9_code principal_dx
+##         &lt;int&gt;   &lt;int&gt; &lt;dbl&gt; &lt;lgl&gt;            &lt;dbl&gt; &lt;chr&gt;     &lt;lgl&gt;       
+##  1         36  165660    72 NA                   3 486       FALSE       
+##  2         36  165660    72 NA                   3 486       FALSE       
+##  3         68  108329    41 TRUE                 4 486       FALSE       
+##  4         68  170467    41 FALSE                4 486       FALSE       
+##  5         85  112077    76 FALSE                3 486       FALSE       
+##  6         85  112077    76 FALSE                3 486       FALSE       
+##  7         94  140037    74 FALSE                2 486       FALSE       
+##  8        105  128744    35 FALSE                3 486       FALSE       
+##  9        109  172335    24 FALSE                4 486       FALSE       
+## 10        109  172335    24 FALSE                4 486       FALSE       
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_admissions)</code></pre>
+<p>Merge some demographic information (ethnicity, gender) into <code>cohort_admissions</code></p>
+<pre class="r"><code>tbl(con, &quot;admissions&quot;) %&gt;%
+  select(subject_id, ethnicity) %&gt;%
+  distinct() %&gt;%
+  print() -&gt; cohort_subjects</code></pre>
+<pre><code>## # Source:   lazy query [?? x 2]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id ethnicity             
+##         &lt;int&gt; &lt;chr&gt;                 
+##  1       1421 BLACK/AFRICAN AMERICAN
+##  2      68255 ASIAN                 
+##  3       4901 WHITE                 
+##  4      81232 WHITE                 
+##  5      28292 WHITE                 
+##  6      21741 WHITE                 
+##  7      12175 BLACK/AFRICAN AMERICAN
+##  8        341 BLACK/AFRICAN AMERICAN
+##  9      48629 UNABLE TO OBTAIN      
+## 10      18688 HISPANIC OR LATINO    
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_subjects)</code></pre>
+<pre class="r"><code>tbl(con, &quot;patients&quot;) %&gt;%
+  select(subject_id, gender) %&gt;%
+  distinct() %&gt;%
+  full_join(cohort_subjects, by = &quot;subject_id&quot;) %&gt;%
+  print() -&gt; cohort_subjects</code></pre>
+<pre><code>## # Source:   lazy query [?? x 3]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id gender ethnicity             
+##         &lt;int&gt; &lt;chr&gt;  &lt;chr&gt;                 
+##  1      26121 M      WHITE                 
+##  2       7489 F      WHITE                 
+##  3      81661 M      WHITE                 
+##  4      30273 F      WHITE                 
+##  5      55935 F      BLACK/AFRICAN AMERICAN
+##  6      63914 M      UNABLE TO OBTAIN      
+##  7      19393 M      WHITE                 
+##  8      15861 M      WHITE                 
+##  9      12289 F      WHITE                 
+## 10      31927 F      PORTUGUESE            
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_subjects)</code></pre>
+<pre class="r"><code>cohort_subjects %&gt;%
+  semi_join(cohort_admissions, by = &quot;subject_id&quot;) %&gt;%
+  print() -&gt; cohort_subjects</code></pre>
+<pre><code>## # Source:   lazy query [?? x 3]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id gender ethnicity             
+##         &lt;int&gt; &lt;chr&gt;  &lt;chr&gt;                 
+##  1      30273 F      WHITE                 
+##  2      15861 M      WHITE                 
+##  3      82100 M      WHITE                 
+##  4      21037 F      WHITE                 
+##  5      54805 M      OTHER                 
+##  6      99185 M      WHITE                 
+##  7        124 M      WHITE                 
+##  8      85828 M      BLACK/AFRICAN AMERICAN
+##  9      63519 M      WHITE                 
+## 10      24047 M      WHITE                 
+## # … with more rows</code></pre>
+<pre class="r"><code># collect(cohort_subjects)</code></pre>
+<p>Resolve some diversity and inconsistency in the <code>ethnicity</code> field:</p>
+<pre class="r"><code>unknown_ethnicity &lt;- c(
+  &quot;OTHER&quot;,
+  &quot;UNABLE TO OBTAIN&quot;,
+  &quot;UNKNOWN/NOT SPECIFIED&quot;,
+  &quot;MULTI RACE ETHNICITY&quot;,
+  &quot;PATIENT DECLINED TO ANSWER&quot;,
+  &quot;UNKNOWN&quot;
+)
+
+cohort_subjects %&gt;%
+  collect() %&gt;%
+  mutate(ethnic_group = case_when(
+    str_detect(ethnicity, &quot;^ASIAN&quot;) ~ &quot;ASIAN&quot;,
+    str_detect(ethnicity, &quot;^BLACK&quot;) ~ &quot;BLACK&quot;,
+    str_detect(ethnicity, &quot;^HISPANIC&quot;) ~ &quot;HISPANIC&quot;,
+    str_detect(ethnicity, &quot;^WHITE&quot;) ~ &quot;WHITE&quot;,
+    ethnicity %in% unknown_ethnicity ~ NA_character_,
+    TRUE ~ NA_character_
+  )) %&gt;%
+  select(subject_id, gender, ethnic_group) %&gt;%
+  print() -&gt; cohort_subjects</code></pre>
+<pre><code>## # A tibble: 2,498 x 3
+##    subject_id gender ethnic_group
+##         &lt;int&gt; &lt;chr&gt;  &lt;chr&gt;       
+##  1         36 M      WHITE       
+##  2         68 F      BLACK       
+##  3         85 M      WHITE       
+##  4         94 M      ASIAN       
+##  5        105 F      BLACK       
+##  6        109 F      BLACK       
+##  7        124 M      WHITE       
+##  8        184 M      WHITE       
+##  9        203 M      ASIAN       
+## 10        211 F      WHITE       
+## # … with 2,488 more rows</code></pre>
+<p>Some patients are coded as belonging to more than one ethnic group. To resolve these inconsistencies, define a helper function to pick the modal value from a vector of values in R, which can be used by the <code>summarize()</code> function to choose one ethnic group for each patient</p>
+<pre class="r"><code>most &lt;- function(x) {
+  if (all(is.na(x))) return(NA_character_)
+  y &lt;- table(x, useNA = &quot;no&quot;)
+  if (length(which(y == max(y))) &gt; 1) return(NA_character_)
+  return(names(y)[which.max(y)])
+}
+
+cohort_subjects %&gt;%
+  group_by(subject_id) %&gt;%
+  summarize(ethnic_group = most(ethnic_group)) %&gt;%
+  ungroup() %&gt;%
+  mutate(ethnic_group = ifelse(is.na(ethnic_group), &quot;UNKNOWN&quot;, ethnic_group)) %&gt;%
+  print() -&gt; cohort_ethnic_groups</code></pre>
+<pre><code>## # A tibble: 2,460 x 2
+##    subject_id ethnic_group
+##         &lt;int&gt; &lt;chr&gt;       
+##  1         36 WHITE       
+##  2         68 BLACK       
+##  3         85 WHITE       
+##  4         94 ASIAN       
+##  5        105 BLACK       
+##  6        109 BLACK       
+##  7        124 WHITE       
+##  8        184 WHITE       
+##  9        203 ASIAN       
+## 10        211 WHITE       
+## # … with 2,450 more rows</code></pre>
+<pre class="r"><code>cohort_subjects %&gt;%
+  select(subject_id, gender) %&gt;%
+  left_join(cohort_ethnic_groups, by = &quot;subject_id&quot;) %&gt;%
+  print() -&gt; cohort_subjects</code></pre>
+<pre><code>## # A tibble: 2,498 x 3
+##    subject_id gender ethnic_group
+##         &lt;int&gt; &lt;chr&gt;  &lt;chr&gt;       
+##  1         36 M      WHITE       
+##  2         68 F      BLACK       
+##  3         85 M      WHITE       
+##  4         94 M      ASIAN       
+##  5        105 F      BLACK       
+##  6        109 F      BLACK       
+##  7        124 M      WHITE       
+##  8        184 M      WHITE       
+##  9        203 M      ASIAN       
+## 10        211 F      WHITE       
+## # … with 2,488 more rows</code></pre>
+<p>Add the demographic information <code>gender</code> and <code>ethnicity</code> into our <code>cohort_admissions</code> table</p>
+<pre class="r"><code>cohort_admissions %&gt;%
+  left_join(cohort_subjects, by = &quot;subject_id&quot;, copy = TRUE) %&gt;%
+  print() -&gt; cohort_admissions</code></pre>
+<pre><code>## # Source:   lazy query [?? x 9]
+## # Database: postgres 11.0.7 [postgres@/var/run/postgresql:5432/mimic]
+##    subject_id hadm_id   age mortality drg_severity icd9_code principal_dx gender
+##         &lt;int&gt;   &lt;int&gt; &lt;dbl&gt; &lt;lgl&gt;            &lt;dbl&gt; &lt;chr&gt;     &lt;lgl&gt;        &lt;chr&gt; 
+##  1         36  165660    72 NA                   3 486       FALSE        M     
+##  2         36  165660    72 NA                   3 486       FALSE        M     
+##  3         68  108329    41 TRUE                 4 486       FALSE        F     
+##  4         68  170467    41 FALSE                4 486       FALSE        F     
+##  5         85  112077    76 FALSE                3 486       FALSE        M     
+##  6         85  112077    76 FALSE                3 486       FALSE        M     
+##  7         94  140037    74 FALSE                2 486       FALSE        M     
+##  8        105  128744    35 FALSE                3 486       FALSE        F     
+##  9        109  172335    24 FALSE                4 486       FALSE        F     
+## 10        109  172335    24 FALSE                4 486       FALSE        F     
+## # … with more rows, and 1 more variable: ethnic_group &lt;chr&gt;</code></pre>
+<pre class="r"><code># collect(cohort_admissions)</code></pre>
+<p>Save the <code>cohort_admissions</code> into a csv file for data visualization and analysis</p>
+<pre class="r"><code>final_cohort &lt;- collect(cohort_admissions)</code></pre>
+<p>Close the connection to database</p>
+<pre class="r"><code>dbDisconnect(con)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+</div>
 </div>
 <div id="data-visualization" class="section level2">
 <h2>Data Visualization</h2>
