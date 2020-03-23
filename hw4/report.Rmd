@@ -13,13 +13,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-The MIMIC-III (Medical Information Mart for Intensive Care III) is a database containing deidentified health-related data for over 40,000 patients staying in critical care units of Beth Israel Denaconess Medical Center between 2001 and 2012. The database consists of forty different tables pertaining to hospital admissions, patient demographics, patient diagnosis, prescriptions, etc. The following analysis seeks to predict the mortality rate of patients diagnosed with pneumonia who were admitted to the medical intensive care unit (MICU) thirty days after discharge. 
+The MIMIC-III (Medical Information Mart for Intensive Care III) is a database containing de-identified health-related data for over 40,000 patients staying in critical care units of Beth Israel Denaconess Medical Center between 2001 and 2012. The database consists of forty different tables pertaining to hospital admissions, patient demographics, patient diagnosis, prescriptions, etc. The following analysis seeks to predict the mortality rate of patients diagnosed with pneumonia who were admitted to the medical intensive care unit (MICU) thirty days after discharge. 
 
 ## Data Preparation 
 
 The MIMIC-III data is accessed by connecting to the PostgreSQL database. A cohort of patients directly admitted into MICU is extracted from the `transfer` table which contains information about the physical location of patients throughout their hospital stay. The `d_icd_diagnoses` table labels all diagnoses according to the Dictionary of International Classification of Diseases, 9th Revision (ICD-9 Codes). From this table, all ICD-9 codes related to pneumonia are stored and matched to patients' ICD-9 codes in the `diagnoses_icd` table, so that only patients diagnosed with pneumonia remain. Pneumonia may not be listed as the principal diagnosis as explained in [the documentation for the `patients` table](https://mimic.physionet.org/mimictables/diagnoses_icd/). The `seq_num` field is a priority ranking for the diagnoses generated at the end of stay. To focus on patients for whom pneumonia was central to their hospitalization, records with pneumonia in any of the first five diagnosis positions, according to `seq_num`, is kept. The dataset containing only patients from MICU is joined with the dataset containing only pneumonia patients to obtain a cohort restricted to pneumonia patients who were directly admitted into the MICU (`cohort_admissions`)
 
-A new logical variable (`principal_dx`) is added to `cohort_admissions` indicating whether pneumonia is the first diagnosis. A new variable (`drg_severity`) is also added classifying the severity of patients' ailments from 1-4 with 1 as least severe and 4 as most severe. This information is obtained from the `drgcodes` table, containing severity and mortality indicators for `DRG` codes from the All Payers Registry (APR). From the `admissions` table, admission time (`admittime`), discharge time (`dischtime`), date of birth (`dob)`, date of death (`dod`), and age at admission (`age`) are joined to `cohort_admissions` for patients who did not die in hospital and are younger than 90 years old. The dataset is restricted because patients older than 90 have artificially inflated ages to keep the data de-identifiable. Lastly, gender and ethnicity is joined to `cohort_admissions` from the `patients` table. 
+A new logical variable (`principal_dx`) is added to `cohort_admissions` indicating whether pneumonia is the first diagnosis. A new variable (`drg_severity`) is also added classifying the severity of patients' ailments from 1-4 with 1 being least severe and 4 being most severe. This information is obtained from the `drgcodes` table, containing severity and mortality indicators for `DRG` codes from the All Payers Registry (APR). From the `admissions` table, admission time (`admittime`), discharge time (`dischtime`), date of birth (`dob)`, date of death (`dod`), and age at admission (`age`) are joined to `cohort_admissions` for patients who did not die in hospital and are younger than 90 years old. The dataset is restricted because patients older than 90 have artificially inflated ages to keep the data de-identifiable. Lastly, gender and ethnicity is joined to `cohort_admissions` from the `patients` table.
 
 ### CONSORT Flow Diagram 
 
@@ -54,10 +54,10 @@ box_pos[7, ] <- c(0.25, vert_pos[7])
 
 # content of boxes
 box_content <- matrix(nrow = num_of_boxes, ncol = 1, data = 0)
-box_content[1] <- "All patients in MIMIC-III \n n = 58,976" # 1st box
-box_content[2] <- "Exclude patients not admitted to MICU \n n = 38,683" # 2nd box
+box_content[1] <- "All patients in MIMIC-III \n n = 58,976"
+box_content[2] <- "Exclude patients not admitted to MICU \n n = 38,683"
 box_content[3] <- "Exclude no pneumonia patients or \n pneumonia not labeled as first five diagnoses \n n = 16,508" # passes 80 lines but necessary for format
-box_content[4] <- "Study Cohort with Drug Severity \n n = 5,963" # etc...
+box_content[4] <- "Study Cohort with Drug Severity \n n = 5,963"
 box_content[5] <- "Exclude patients who died in hospital \n n = 1,188"
 box_content[6] <- "Exclude patients of age > 90 \n n = 432"
 box_content[7] <- "Study cohort with Gender and Ethnicity \n n = 4,542"
@@ -68,14 +68,22 @@ box_x <- c(0.20, 0.25, 0.25, 0.20, 0.25, 0.25, 0.22)
 box_y <- c(0.07, 0.05, 0.07, 0.07, 0.05, 0.05, 0.07)
 
 # Draw the arrows
-straightarrow(from = c(box_pos[1, 1], box_pos[2, 2]), 
-              to = box_pos[2, ], lwd = 1)
-straightarrow(from = c(box_pos[1, 1], box_pos[3, 2]), 
-              to = box_pos[3, ], lwd = 1)
-straightarrow(from = c(box_pos[4, 1], box_pos[5, 2]), 
-              to = box_pos[5, ], lwd = 1)
-straightarrow(from = c(box_pos[4, 1], box_pos[6, 2]), 
-              to = box_pos[6, ], lwd = 1)
+straightarrow(
+  from = c(box_pos[1, 1], box_pos[2, 2]),
+  to = box_pos[2, ], lwd = 1
+)
+straightarrow(
+  from = c(box_pos[1, 1], box_pos[3, 2]),
+  to = box_pos[3, ], lwd = 1
+)
+straightarrow(
+  from = c(box_pos[4, 1], box_pos[5, 2]),
+  to = box_pos[5, ], lwd = 1
+)
+straightarrow(
+  from = c(box_pos[4, 1], box_pos[6, 2]),
+  to = box_pos[6, ], lwd = 1
+)
 straightarrow(from = box_pos[1, ], to = box_pos[4, ], lwd = 1)
 straightarrow(from = box_pos[4, ], to = box_pos[7, ], lwd = 1)
 
@@ -88,7 +96,6 @@ for (i in 1:num_of_boxes) {
   )
 }
 ```
-
 
 ### Code
 
@@ -144,7 +151,7 @@ tbl(con, "d_icd_diagnoses") %>%
   print() -> pneu_codes
 ```
 
-`diagnoses_icd` table stores the diagnosis of each admission. We use `semi_join()` to keep the rows in `diagnoses_icd` that match the ICD-9 codes related to pneumonia
+Match the ICD-9 codes related to pneumonia
 
 ```{r}
 tbl(con, "diagnoses_icd") %>%
@@ -181,7 +188,7 @@ cohort_admissions %>%
   print() -> cohort_admissions
 ```
 
-Pull the drug severity information from `drgcodes` and right-join it to our query table
+Pull the drug severity information from `drgcodes` and right-join it to the query table
 
 ```{r}
 tbl(con, "drgcodes") %>%
@@ -301,7 +308,9 @@ cohort_subjects %>%
   group_by(subject_id) %>%
   summarize(ethnic_group = most(ethnic_group)) %>%
   ungroup() %>%
-  mutate(ethnic_group = ifelse(is.na(ethnic_group), "UNKNOWN", ethnic_group)) %>%
+  mutate(ethnic_group = ifelse(is.na(ethnic_group), "UNKNOWN",
+    ethnic_group
+  )) %>%
   print() -> cohort_ethnic_groups
 ```
 
@@ -312,7 +321,7 @@ cohort_subjects %>%
   print() -> cohort_subjects
 ```
 
-Add the demographic information `gender` and `ethnicity` into our `cohort_admissions` table
+Add the demographic information `gender` and `ethnicity` into `cohort_admissions` table
 
 ```{r}
 cohort_admissions %>%
@@ -331,7 +340,6 @@ Close the connection to database
 ```{r}
 dbDisconnect(con)
 ```
-
 
 ## Data Visualization
 
@@ -363,6 +371,8 @@ final_cohort %>%
   labs(title = "Barplot of Ethnicity", x = "Ethnicity") +
   theme_minimal()
 ```
+
+There are about 500 more male patients than female. Age is slightly left skewed, indicating that adults from 60-90 years old are more likely to be admitted to MICU for pneumonia. Majority of the patients in this cohort are white, so the prediction obtained from this analysis is not generalizable to all ethnicities.
 
 ### Plots for Patients Relationship to Pneumonia 
 
@@ -412,7 +422,7 @@ final_cohort %>%
 final_cohort %>%
   ggplot(aes(x = mortality)) +
   geom_bar(fill = "lightblue3") +
-  scale_x_discrete(labels = c("Yes", "No", "NA")) +
+  scale_x_discrete(labels = c("No", "Yes", "NA")) +
   labs(
     title = "Barplot of Mortality after 30 Days of Discharge",
     x = "Death"
@@ -420,13 +430,15 @@ final_cohort %>%
   theme_minimal()
 ```
 
+The barplot of drug severity illustrates that many of the patients in this cohort have a drug severity of 3 to 4 (on the more severe end). Diagnosis for pneumonia appears to be more of a secondary diagnosis such as a repercussion of another disease. In this cohort, the main causes of pneumonia are from a unspecified bacteria, staph infection, or penumoccocal. Out of those with responses for mortality, the barplot indicates that the rate of mortality 30-days after discharge is approximately 15.8%.
+
 ## Analysis 
 
-A predictive model for the 30-day mortality rate of patients admitted into MICU is developed using logistic regression and neural network. Their predictive performance is compared using root mean squared error (RMSE) and summarized via graphs. 
+A predictive model for the 30-day mortality rate of patients admitted into MICU is developed using logistic regression and neural network. Their predictive performance is compared using root mean squared error (RMSE) and displayed via graphs. 
 
 ### 1. Logistic Regression 
 
-Before running a logistic regression, the ICD-9 Codes are re-coded as an indicator variable with 1 representing the ICD-9 code for the patient is in the top five most common types of pneumonia. Additionally, all character variables are converted into factors. The `cohort_admissions` data is split into a training and test set with 75% of the observations in the training set. A logistic regression is performed on the training set with age, drug severity, ICD-9 code, principal drug, gender, and ethnic group as the covariates. A root mean squared error (RMSE) is calculated to measure performance.
+Before running a logistic regression, the ICD-9 Codes are re-coded as an indicator variable with 1 representing if the patients' ICD-9 code is in the top five most common types of pneumonia. Additionally, all character variables are converted into factors. The `cohort_admissions` data is split into a training and test set with 75% of the observations in the training set. A logistic regression is performed on the training set with age, drug severity, ICD-9 code, principal drug, gender, and ethnic group as the covariates. A root mean squared error (RMSE) is calculated to measure performance.
 
 ```{r}
 final_cohort1 <- final_cohort
@@ -537,4 +549,4 @@ paste("Root MSE:", round(RMSE.NN, 4), sep = " ")
 
 ## Conclusion 
 
-From the running the two models, it appears that the logistic regression is better at predicting 30-day mortality rate for patients with pneumonia who were admitted to the MICU. From the logistic regression, it appears that age and a drug severity of 4 (highest) are significant factors in predicting 30-day mortality rate. The logistic regression resulted in a RMSE of 0.396 compared to a RMSE of 0.410 for the neural network. Both models result in a relatively low RMSE; the closer the RMSE is to zero, the better the predictive model. However, a factor in contributing to a lower RMSE for neural network could be that nearly half of the observations are removed due to missing data. Future analysis includes using a better method than omission to deal with missing data.  
+From running the two models, it appears that the logistic regression is better at predicting 30-day mortality rate for patients with pneumonia who were admitted to the MICU. From the logistic regression, age and a drug severity of 4 (most severe) are significant factors in predicting 30-day mortality rate. The logistic regression resulted in a RMSE of 0.396 compared to a RMSE of 0.410 for the neural network. Both models result in a relatively low RMSE; the closer the RMSE is to zero, the better the predictive model. However, a factor in contributing to a lower RMSE for neural network could be that nearly half of the observations are removed due to missing data. Future analysis includes using a better method than omission to deal with missing data or using a different neural network package.

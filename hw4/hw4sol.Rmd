@@ -69,7 +69,6 @@ In this section, we create a cohort of patients who were directly admitted into 
 
 First we create a (query) table of patients who were directly admitted into MICU.
 ```{r}
-
 tbl(con, "transfers") %>%
   select(subject_id, hadm_id, prev_careunit, curr_careunit) %>%
   filter(is.na(prev_careunit) & curr_careunit == "MICU") %>%
@@ -82,7 +81,6 @@ tbl(con, "transfers") %>%
 
 Now we want to restrict to pneumonia patients. To find all possible ICD-9 codes related to pneumonia, we search for string `pneumonia` in the `long_title` of table `d_icd_diagnoses`:
 ```{r}
-
 tbl(con, "d_icd_diagnoses") %>%
   filter(str_detect(tolower(long_title), "pneumonia")) %>%
   print() -> pneu_codes
@@ -109,6 +107,7 @@ pneu_admissions %>%
 
 # collect(pneu_admissions)
 ```
+
 Now we `inner_join` the table of admissions to MICU and the table of admissions that include pneumonia diagnosis.
 ```{r}
 micu_admissions %>%
@@ -185,6 +184,7 @@ cohort_admissions %>%
 
 # collect(cohort_admissions)
 ```
+
 Many mortality indicators are missing, due to neither the hospital database nor the social security database having a record of these patients’ deaths. We could convert these to `FALSE` values, but it may be helpful to retain in the analytic table this information on whether deaths were recorded at all, e.g. for validation or sensitivity testing.
 
 Finally, let's merge some demographic information (ethnicity, gender) into our study `cohort_admissions`.
@@ -214,6 +214,7 @@ cohort_subjects %>%
 
 # collect(cohort_subjects)
 ```
+
 Let's resolve some diversity and inconsistency in the `ethnicity` field:
 ```{r}
 unknown_ethnicity <- c(
@@ -256,7 +257,9 @@ cohort_subjects %>%
   group_by(subject_id) %>%
   summarize(ethnic_group = most(ethnic_group)) %>%
   ungroup() %>%
-  mutate(ethnic_group = ifelse(is.na(ethnic_group), "UNKNOWN", ethnic_group)) %>%
+  mutate(ethnic_group = ifelse(is.na(ethnic_group), "UNKNOWN",
+    ethnic_group
+  )) %>%
   print() -> cohort_ethnic_groups
 ```
 ```{r}
@@ -265,6 +268,7 @@ cohort_subjects %>%
   left_join(cohort_ethnic_groups, by = "subject_id") %>%
   print() -> cohort_subjects
 ```
+
 Now we add the demographic information `gender` and `ethnicity` into our `cohort_admissions` table:
 ```{r}
 cohort_admissions %>%
@@ -290,7 +294,6 @@ dbDisconnect(con)
 
 ### Plots for Demographic Features 
 ```{r}
-
 # Gender
 final_cohort %>%
   distinct(subject_id, .keep_all = TRUE) %>%
@@ -320,7 +323,6 @@ final_cohort %>%
 ### Plots for Patients Relationship to Pneumonia 
 
 ```{r}
-
 # Drug Severity
 final_cohort %>%
   ggplot(aes(x = drg_severity)) +
@@ -366,7 +368,7 @@ final_cohort %>%
 final_cohort %>%
   ggplot(aes(x = mortality)) +
   geom_bar(fill = "lightblue3") +
-  scale_x_discrete(labels = c("Yes", "No", "NA")) +
+  scale_x_discrete(labels = c("No", "Yes", "NA")) +
   labs(
     title = "Barplot of Mortality after 30 Days of Discharge",
     x = "Death"
@@ -379,10 +381,9 @@ final_cohort %>%
 ### Logistic Regression
 
 ```{r}
-
 final_cohort1 <- final_cohort
 
-# Recode icd9_code
+## Recode icd9_code
 top_5 <- c("486", "48241", "4829", "4821", "99731")
 final_cohort1$icd9_code <- ifelse(final_cohort1$icd9_code %in% top_5,
   TRUE, FALSE
@@ -410,7 +411,7 @@ summary(logit)
 
 mortality_hat <- predict(logit, test, type = "response")
 
-##
+## calculate RMSE
 sq_diff <- (test$mortality - mortality_hat)^2
 root_mse <- sqrt(mean(sq_diff, na.rm = TRUE))
 paste("Root MSE:", round(root_mse, 4), sep = " ")
@@ -440,7 +441,8 @@ final_cohort2 <- final_cohort1 %>%
   select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>%
   select("mortality", everything())
 
-final_cohort2
+# final_cohort2
+
 ## set the seed to make partition reproducible
 set.seed(12345)
 
@@ -455,7 +457,7 @@ dimnames(x_train) <- NULL
 y_train <- train2 %>% select(mortality)
 y_train <- as.matrix(y_train)
 dimnames(y_train) <- NULL
-y_train_cat <- to_categorical(y_train)
+# y_train_cat <- to_categorical(y_train)
 
 ## create test set
 test2 <- final_cohort2[-train_ind2, ]
@@ -467,7 +469,7 @@ dimnames(x_test) <- NULL
 y_test <- test2 %>% select(mortality)
 y_test <- as.matrix(y_test)
 dimnames(y_test) <- NULL
-y_test_cat <- to_categorical(y_test)
+# y_test_cat <- to_categorical(y_test)
 
 # image(t(x_train), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
 
@@ -528,16 +530,16 @@ ttrain,
 hidden = 3, linear.output = T
 )
 
-# plot neural network
+## plot neural network
 plot(NN, rep = "best")
 
-# Prediction
+## prediction
 predict_testNN <- compute(NN, x_test)
 predict_testNN <- (predict_testNN$net.result *
   (max(final_tt$mortality) - min(final_tt$mortality))) +
   min(final_tt$mortality)
 
-# Calculate Root Mean Square Error (RMSE)
+## calculate Root Mean Square Error (RMSE)
 RMSE.NN <- (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest))^0.5
 RMSE.NN
 ```
@@ -553,53 +555,65 @@ For more details, see:
 library(shape)
 library(diagram)
 
-# set margins and multiplot
+## set margins and multiplot
 par(mfrow = c(1, 1))
 par(mar = c(0, 0, 0, 0))
 
-# initialise a plot device
+## initialise a plot device
 openplotmat()
 
-# position of boxes
-# 1st column indicates x axis position between 0 and 1
-# 2nd column indicates y axis position between 0 and 1
-# automatically assigns vertical position
+## position of boxes
+## 1st column indicates x axis position between 0 and 1
+## 2nd column indicates y axis position between 0 and 1
+## automatically assigns vertical position
 num_of_boxes <- 7
 auto_coords <- coordinates(num_of_boxes)
 vert_pos <- rev(auto_coords[, 1])
 box_pos <- matrix(nrow = num_of_boxes, ncol = 2, data = 0)
-box_pos[1, ] <- c(0.20, vert_pos[1]) # 1st box
-box_pos[2, ] <- c(0.70, vert_pos[2]) # 2nd box
-box_pos[3, ] <- c(0.70, vert_pos[3]) # 3rd box
-box_pos[4, ] <- c(0.20, vert_pos[4]) # etc...
+box_pos[1, ] <- c(0.20, vert_pos[1]) ## 1st box
+box_pos[2, ] <- c(0.70, vert_pos[2]) ## 2nd box
+box_pos[3, ] <- c(0.70, vert_pos[3]) ## 3rd box
+box_pos[4, ] <- c(0.20, vert_pos[4]) ## etc...
 box_pos[5, ] <- c(0.70, vert_pos[5])
 box_pos[6, ] <- c(0.70, vert_pos[6])
 box_pos[7, ] <- c(0.20, vert_pos[7])
 
-# content of boxes
+## content of boxes
 box_content <- matrix(nrow = num_of_boxes, ncol = 1, data = 0)
-box_content[1] <- "All patients in MIMIC-III \n n = 58,976" # 1st box
-box_content[2] <- "Exclude patients not admitted to MICU \n n = 38,683" # 2nd box
-box_content[3] <- "Exclude patients not diagnosed for pneumonia or \n pneumonia not labeled as first five diagonses \n n = 16,508" # passes 80 lines but necessary for format
-box_content[4] <- "Study Cohort with drug severity \n n = 5,963" # etc...
+box_content[1] <- "All patients in MIMIC-III \n n = 58,976"
+box_content[2] <- "Exclude patients not admitted to MICU \n n = 38,683"
+box_content[3] <- "Exclude patients not diagnosed for pneumonia or \n pneumonia not labeled as first five diagonses \n n = 16,508" ## passes 80 lines but necessary for format
+box_content[4] <- "Study Cohort with drug severity \n n = 5,963"
 box_content[5] <- "Exclude patients who died in hospital \n n = 1,188"
 box_content[6] <- "Exclude patients of age > 90 \n n = 432"
 box_content[7] <- "Study cohort with gender and ethnicity \n n = 4,542"
 
 
-# adjust the size of boxes to fit content
+## adjust the size of boxes to fit content
 box_x <- c(0.20, 0.25, 0.25, 0.20, 0.25, 0.25, 0.20)
 box_y <- c(0.07, 0.05, 0.08, 0.07, 0.05, 0.05, 0.07)
 
-# Draw the arrows
-straightarrow(from = c(box_pos[1, 1], box_pos[2, 2]), to = box_pos[2, ], lwd = 1)
-straightarrow(from = c(box_pos[1, 1], box_pos[3, 2]), to = box_pos[3, ], lwd = 1)
-straightarrow(from = c(box_pos[4, 1], box_pos[5, 2]), to = box_pos[5, ], lwd = 1)
-straightarrow(from = c(box_pos[4, 1], box_pos[6, 2]), to = box_pos[6, ], lwd = 1)
+## draw the arrows
+straightarrow(
+  from = c(box_pos[1, 1], box_pos[2, 2]), to = box_pos[2, ],
+  lwd = 1
+)
+straightarrow(
+  from = c(box_pos[1, 1], box_pos[3, 2]), to = box_pos[3, ],
+  lwd = 1
+)
+straightarrow(
+  from = c(box_pos[4, 1], box_pos[5, 2]), to = box_pos[5, ],
+  lwd = 1
+)
+straightarrow(
+  from = c(box_pos[4, 1], box_pos[6, 2]), to = box_pos[6, ],
+  lwd = 1
+)
 straightarrow(from = box_pos[1, ], to = box_pos[4, ], lwd = 1)
 straightarrow(from = box_pos[4, ], to = box_pos[7, ], lwd = 1)
 
-# Draw the boxes
+## draw the boxes
 for (i in 1:num_of_boxes) {
   textrect(
     mid = box_pos[i, ], radx = box_x[i], rady = box_y[i],
