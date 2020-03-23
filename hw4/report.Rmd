@@ -17,9 +17,9 @@ The MIMIC-III (Medical Information Mart for Intensive Care III) is a database co
 
 ## Data Preparation 
 
-The MIMIC-III data is accessed by connecting to the PostgresSQL database. A cohort of patients directly admitted into MICU is extracted from the `transfer` table which contains information about the physical location of patients throughout their hospital stay. The `d_icd_diagnoses` table labels all diagnoses according to the Dictionary of International Classification of Diseases, 9th Revision (ICD-9 Codes). From this table, all ICD-9 codes related to pneumonia are stored and matched to patients' ICD-9 codes in the `diagnoses_icd` table, so that only patients diagnosed with pnuemonia remain. Pneumonia may not be listed as the principal diagnosis as explained in [the documentation for the `patients` table](https://mimic.physionet.org/mimictables/diagnoses_icd/). The `seq_num` field is a priority ranking for the diagnoses generated at the end of stay. To focus on patients for whom pneumonia was central to their hospitalization, records with pnuemonia in any of the first five diagnosis positions, according to `seq_num`, is kept. The dataset containing only patients from MICU is joined with the dataset containing only pneumonia patients to obtain a cohort restricted to pneumonia patients who were directly admitted into the MICU (`cohort_admissions`)
+The MIMIC-III data is accessed by connecting to the PostgreSQL database. A cohort of patients directly admitted into MICU is extracted from the `transfer` table which contains information about the physical location of patients throughout their hospital stay. The `d_icd_diagnoses` table labels all diagnoses according to the Dictionary of International Classification of Diseases, 9th Revision (ICD-9 Codes). From this table, all ICD-9 codes related to pneumonia are stored and matched to patients' ICD-9 codes in the `diagnoses_icd` table, so that only patients diagnosed with pneumonia remain. Pneumonia may not be listed as the principal diagnosis as explained in [the documentation for the `patients` table](https://mimic.physionet.org/mimictables/diagnoses_icd/). The `seq_num` field is a priority ranking for the diagnoses generated at the end of stay. To focus on patients for whom pneumonia was central to their hospitalization, records with pneumonia in any of the first five diagnosis positions, according to `seq_num`, is kept. The dataset containing only patients from MICU is joined with the dataset containing only pneumonia patients to obtain a cohort restricted to pneumonia patients who were directly admitted into the MICU (`cohort_admissions`)
 
-A new logical variable (`principal_dx`) is added to `cohort_admissions` indicating whether pneumonia is the first diagnosis. A new variable (`drg_severity`) is also added classifying the severity of patients' ailments from 1-4 with 1 as least severe and 4 as most severe. This information is obtained from the `drgcodes` table, containing severity and mortality indicators for `DRG` codes from the All Payers Registry (APR). From the `admissions` table, admission time (`admittime`), discharge time (`dischtime`), date of birth (`dob)`, date of death (`dod`), and age at admission (`age`) are joined to `cohort_admissions` for patients who did not die in hospital and are younger than 90 years old. The dataset is restricted because patients older than 90 have artifically inflated ages to keep the data de-identifiable. Lastly, gender and ethnicity is joined to `cohort_admissions` from the `patients` table. 
+A new logical variable (`principal_dx`) is added to `cohort_admissions` indicating whether pneumonia is the first diagnosis. A new variable (`drg_severity`) is also added classifying the severity of patients' ailments from 1-4 with 1 as least severe and 4 as most severe. This information is obtained from the `drgcodes` table, containing severity and mortality indicators for `DRG` codes from the All Payers Registry (APR). From the `admissions` table, admission time (`admittime`), discharge time (`dischtime`), date of birth (`dob)`, date of death (`dod`), and age at admission (`age`) are joined to `cohort_admissions` for patients who did not die in hospital and are younger than 90 years old. The dataset is restricted because patients older than 90 have artificially inflated ages to keep the data de-identifiable. Lastly, gender and ethnicity is joined to `cohort_admissions` from the `patients` table. 
 
 ### CONSORT Flow Diagram 
 
@@ -41,26 +41,26 @@ openplotmat()
 # 2nd column indicates y axis position between 0 and 1
 # automatically assigns vertical position
 num_of_boxes <- 7
-auto_coords = coordinates(num_of_boxes)
-vert_pos = rev(auto_coords[,1])
+auto_coords <- coordinates(num_of_boxes)
+vert_pos <- rev(auto_coords[, 1])
 box_pos <- matrix(nrow = num_of_boxes, ncol = 2, data = 0)
-box_pos[1,] = c(0.25, vert_pos[1]) # 1st box
-box_pos[2,] = c(0.75, vert_pos[2]) # 2nd box
-box_pos[3,] = c(0.75, vert_pos[3]) # 3rd box
-box_pos[4,] = c(0.25, vert_pos[4]) # etc...
-box_pos[5,] = c(0.75, vert_pos[5])
-box_pos[6,] = c(0.75, vert_pos[6])
-box_pos[7,] = c(0.25, vert_pos[7])
+box_pos[1, ] <- c(0.25, vert_pos[1]) # 1st box
+box_pos[2, ] <- c(0.75, vert_pos[2]) # 2nd box
+box_pos[3, ] <- c(0.75, vert_pos[3]) # 3rd box
+box_pos[4, ] <- c(0.25, vert_pos[4]) # etc...
+box_pos[5, ] <- c(0.75, vert_pos[5])
+box_pos[6, ] <- c(0.75, vert_pos[6])
+box_pos[7, ] <- c(0.25, vert_pos[7])
 
 # content of boxes
 box_content <- matrix(nrow = num_of_boxes, ncol = 1, data = 0)
-box_content[1] = "All patients in MIMIC-III \n n = 58,976" # 1st box
-box_content[2] = "Exclude patients not admitted to MICU \n n = 38,683" # 2nd box
-box_content[3] = "Exclude no pneumonia patients or \n pneumonia not labeled as first five diagonses \n n = 16,508" # passes 80 lines but necessary for format
-box_content[4] = "Study Cohort with Drug Severity \n n = 5,963" # etc...
-box_content[5] = "Exclude patients who died in hospital \n n = 1,188" 
-box_content[6] = "Exclude patients of age > 90 \n n = 432"
-box_content[7] = "Study cohort with Gender and Ethnicity \n n = 4,542"
+box_content[1] <- "All patients in MIMIC-III \n n = 58,976" # 1st box
+box_content[2] <- "Exclude patients not admitted to MICU \n n = 38,683" # 2nd box
+box_content[3] <- "Exclude no pneumonia patients or \n pneumonia not labeled as first five diagnoses \n n = 16,508" # passes 80 lines but necessary for format
+box_content[4] <- "Study Cohort with Drug Severity \n n = 5,963" # etc...
+box_content[5] <- "Exclude patients who died in hospital \n n = 1,188"
+box_content[6] <- "Exclude patients of age > 90 \n n = 432"
+box_content[7] <- "Study cohort with Gender and Ethnicity \n n = 4,542"
 
 
 # adjust the size of boxes to fit content
@@ -68,19 +68,25 @@ box_x <- c(0.20, 0.25, 0.25, 0.20, 0.25, 0.25, 0.22)
 box_y <- c(0.07, 0.05, 0.07, 0.07, 0.05, 0.05, 0.07)
 
 # Draw the arrows
-straightarrow(from = c(box_pos[1,1],box_pos[2,2]), to = box_pos[2,], lwd = 1)  
-straightarrow(from = c(box_pos[1,1],box_pos[3,2]), to = box_pos[3,], lwd = 1) 
-straightarrow(from = c(box_pos[4,1],box_pos[5,2]), to = box_pos[5,], lwd = 1)
-straightarrow(from = c(box_pos[4,1],box_pos[6,2]), to = box_pos[6,], lwd = 1)
-straightarrow(from = box_pos[1,], to = box_pos[4,], lwd = 1)
-straightarrow(from = box_pos[4,], to = box_pos[7,], lwd = 1)
+straightarrow(from = c(box_pos[1, 1], box_pos[2, 2]), 
+              to = box_pos[2, ], lwd = 1)
+straightarrow(from = c(box_pos[1, 1], box_pos[3, 2]), 
+              to = box_pos[3, ], lwd = 1)
+straightarrow(from = c(box_pos[4, 1], box_pos[5, 2]), 
+              to = box_pos[5, ], lwd = 1)
+straightarrow(from = c(box_pos[4, 1], box_pos[6, 2]), 
+              to = box_pos[6, ], lwd = 1)
+straightarrow(from = box_pos[1, ], to = box_pos[4, ], lwd = 1)
+straightarrow(from = box_pos[4, ], to = box_pos[7, ], lwd = 1)
 
 # Draw the boxes
 for (i in 1:num_of_boxes) {
-  textrect(mid = box_pos[i,], radx = box_x[i], rady = box_y[i], 
-           lab = box_content[i], 
-           shadow.col = "grey")
-  }
+  textrect(
+    mid = box_pos[i, ], radx = box_x[i], rady = box_y[i],
+    lab = box_content[i],
+    shadow.col = "grey"
+  )
+}
 ```
 
 
@@ -95,52 +101,47 @@ library(DBI)
 library(RPostgreSQL)
 library(tidyverse)
 library(lubridate)
-
 ```
  
 Connect to PostgreSQL 
 
 ```{r}
 # Load configuration settings
-dbdriver <- 'PostgreSQL'
-user  <- 'postgres'
-password <- 'postgres'
-dbname <- 'mimic'
-schema <- 'mimiciii'
+dbdriver <- "PostgreSQL"
+user <- "postgres"
+password <- "postgres"
+dbname <- "mimic"
+schema <- "mimiciii"
 
 # Connect to the database using the configuration settings
-con <- dbConnect(RPostgreSQL::PostgreSQL(), 
-                 dbname = dbname,
-                 user = user, 
-                 password = password)
+con <- dbConnect(RPostgreSQL::PostgreSQL(),
+  dbname = dbname,
+  user = user,
+  password = password
+)
 
 # Set the default schema
-dbExecute(con, paste("SET search_path TO ", schema, sep=" "))
+dbExecute(con, paste("SET search_path TO ", schema, sep = " "))
 con
 ```
 
 Create a (query) table of patients who were directly admitted into MICU
 
 ```{r}
-
 tbl(con, "transfers") %>%
   select(subject_id, hadm_id, prev_careunit, curr_careunit) %>%
   filter(is.na(prev_careunit) & curr_careunit == "MICU") %>%
   select(subject_id, hadm_id) %>%
   distinct() %>%
   print() -> micu_admissions
-
-# collect(micu_admissions)
 ```
 
 Restrict to pneumonia patients; to find all possible ICD-9 codes related to pneumonia, search for string `pneumonia` in the `long_title` of table `d_icd_diagnoses`
 
 ```{r}
-
 tbl(con, "d_icd_diagnoses") %>%
   filter(str_detect(tolower(long_title), "pneumonia")) %>%
   print() -> pneu_codes
-
 ```
 
 `diagnoses_icd` table stores the diagnosis of each admission. We use `semi_join()` to keep the rows in `diagnoses_icd` that match the ICD-9 codes related to pneumonia
@@ -149,8 +150,6 @@ tbl(con, "d_icd_diagnoses") %>%
 tbl(con, "diagnoses_icd") %>%
   semi_join(pneu_codes, by = "icd9_code") %>%
   print() -> pneu_admissions
-
- # collect(pneu_admissions)
 ```
 
 Include records with pneumonia in any of the first five diagnosis positions, according to the `seq_num` field. `group_by()` to limit the query to the first pneumonia diagnosis for each admission
@@ -163,8 +162,6 @@ pneu_admissions %>%
   ungroup() %>%
   select(subject_id, hadm_id, icd9_code, seq_num) %>%
   print() -> pneu_admissions
-
-# collect(pneu_admissions)
 ```
 
 `inner_join` the table of admissions to MICU and the table of admissions that include pneumonia diagnosis
@@ -173,19 +170,15 @@ pneu_admissions %>%
 micu_admissions %>%
   inner_join(pneu_admissions, by = c("subject_id", "hadm_id")) %>%
   print() -> cohort_admissions
-
-# collect(cohort_admissions)
 ```
 
-Create a logical variable indicating the pneumonia is the principal diagonosis or not (according to `seq_num`)
+Create a logical variable indicating the pneumonia is the principal diagnosis or not (according to `seq_num`)
 
 ```{r}
 cohort_admissions %>%
   mutate(principal_dx = seq_num == 1) %>%
   select(-seq_num) %>%
   print() -> cohort_admissions
-
-# collect(cohort_admissions)
 ```
 
 Pull the drug severity information from `drgcodes` and right-join it to our query table
@@ -197,8 +190,6 @@ tbl(con, "drgcodes") %>%
   right_join(cohort_admissions, by = c("subject_id", "hadm_id")) %>%
   mutate(drg_severity = ifelse(is.na(drg_severity), 1, drg_severity)) %>%
   print() -> cohort_admissions
-
- # collect(cohort_admissions)
 ```
 
 Pull the admission time `admittime`, discharge time `dischtime`, date of birth `dob`, and date of death `dod`; keep patients who did not die in hospital
@@ -206,9 +197,11 @@ Pull the admission time `admittime`, discharge time `dischtime`, date of birth `
 ```{r}
 cohort_admissions %>%
   left_join(
-    select(tbl(con, "admissions"),
-           subject_id, hadm_id, admittime, dischtime, hospital_expire_flag
-    ), by = c("subject_id", "hadm_id")
+    select(
+      tbl(con, "admissions"),
+      subject_id, hadm_id, admittime, dischtime, hospital_expire_flag
+    ),
+    by = c("subject_id", "hadm_id")
   ) %>%
   filter(hospital_expire_flag == 0) %>% # patients who did not die in hospital
   select(-hospital_expire_flag) %>%
@@ -217,8 +210,6 @@ cohort_admissions %>%
     by = "subject_id"
   ) %>%
   print(width = Inf) -> cohort_admissions
-
-# collect(cohort_admissions)
 ```
 
 Add `age` (at admission) variable into the table; remove patients older than 90 yrs from the analysis
@@ -241,8 +232,6 @@ cohort_admissions %>%
   select(-admittime, -dischtime, -dob, -dod, -tt_death) %>%
   select(subject_id, hadm_id, age, mortality, everything()) %>%
   print() -> cohort_admissions
-
-# collect(cohort_admissions)
 ```
 
 Merge some demographic information (ethnicity, gender) into `cohort_admissions`
@@ -252,8 +241,6 @@ tbl(con, "admissions") %>%
   select(subject_id, ethnicity) %>%
   distinct() %>%
   print() -> cohort_subjects
-
-# collect(cohort_subjects)
 ```
 
 ```{r}
@@ -262,16 +249,12 @@ tbl(con, "patients") %>%
   distinct() %>%
   full_join(cohort_subjects, by = "subject_id") %>%
   print() -> cohort_subjects
-
-# collect(cohort_subjects)
 ```
 
 ```{r}
 cohort_subjects %>%
   semi_join(cohort_admissions, by = "subject_id") %>%
   print() -> cohort_subjects
-
-# collect(cohort_subjects)
 ```
 
 Resolve some diversity and inconsistency in the `ethnicity` field
@@ -304,9 +287,13 @@ Some patients are coded as belonging to more than one ethnic group. To resolve t
 
 ```{r}
 most <- function(x) {
-  if (all(is.na(x))) return(NA_character_)
+  if (all(is.na(x))) {
+    return(NA_character_)
+  }
   y <- table(x, useNA = "no")
-  if (length(which(y == max(y))) > 1) return(NA_character_)
+  if (length(which(y == max(y))) > 1) {
+    return(NA_character_)
+  }
   return(names(y)[which.max(y)])
 }
 
@@ -331,8 +318,6 @@ Add the demographic information `gender` and `ethnicity` into our `cohort_admiss
 cohort_admissions %>%
   left_join(cohort_subjects, by = "subject_id", copy = TRUE) %>%
   print() -> cohort_admissions
-
-# collect(cohort_admissions)
 ```
 
 Save the `cohort_admissions` into a csv file for data visualization and analysis
@@ -352,86 +337,87 @@ dbDisconnect(con)
 
 ### Plots for Demographic Features 
 
-```{r, echo = FALSE}
-
-# Gender 
+```{r}
+# Gender
 final_cohort %>%
   distinct(subject_id, .keep_all = TRUE) %>%
-  ggplot(aes(x = gender)) + 
-  geom_bar(fill = "lightblue3") + 
+  ggplot(aes(x = gender)) +
+  geom_bar(fill = "lightblue3") +
   scale_x_discrete(labels = c("Female", "Male")) +
   labs(title = "Barplot of Gender", x = "Gender") +
   theme_minimal()
 
 # Age
-final_cohort %>% 
-  distinct(subject_id, .keep_all = TRUE) %>% 
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
   ggplot(aes(x = age)) +
-  geom_histogram(bins = 30, fill = "lightblue3") + 
-  labs(title = "Histogram of Age", x = "Age") + 
+  geom_histogram(bins = 30, fill = "lightblue3") +
+  labs(title = "Histogram of Age", x = "Age") +
   theme_minimal()
 
 # Ethnic Group
-final_cohort %>% 
-  distinct(subject_id, .keep_all = TRUE) %>% 
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
   ggplot(aes(x = ethnic_group)) +
-  geom_bar(fill = "lightblue3") + 
-  labs(title = "Barplot of Ethnicity", x = "Ethnicity") + 
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Barplot of Ethnicity", x = "Ethnicity") +
   theme_minimal()
-
 ```
 
 ### Plots for Patients Relationship to Pneumonia 
 
-```{r, echo=FALSE}
-
-# Drug Severity 
-final_cohort %>% 
-  ggplot(aes(x = drg_severity)) + 
-  geom_bar(fill = "lightblue3") + 
+```{r}
+# Drug Severity
+final_cohort %>%
+  ggplot(aes(x = drg_severity)) +
+  geom_bar(fill = "lightblue3") +
   labs(title = "Graph of Drug Severity", x = "Drug Severity") +
   theme_minimal()
 
 # Principle Disease
-final_cohort %>% 
-  ggplot(aes(x = principal_dx)) + 
-  geom_bar(fill = "lightblue3") + 
+final_cohort %>%
+  ggplot(aes(x = principal_dx)) +
+  geom_bar(fill = "lightblue3") +
   scale_x_discrete(labels = c("No", "Yes")) +
   labs(title = "Pneumonia as Principle Diagnosis", x = NULL) +
   theme_minimal()
 
-# ICDA_Code 
+# ICDA_Code
 final_cohort %>%
   count(icd9_code) %>%
   arrange(desc(n)) %>%
-  head(n = 10) %>% 
-  ggplot(aes(x = icd9_code, y = n)) + 
+  head(n = 10) %>%
+  ggplot(aes(x = icd9_code, y = n)) +
   geom_bar(stat = "identity", fill = "lightblue3") +
-  coord_flip() + 
-  scale_x_discrete(labels = c("Pneumococcal Septicemia",
-                              "Pneumococcal Pneumonia",
-                              "Klebsiella Pneumoniae",
-                              "Pseudomonal",
-                              "Methicillin Susceptible due to Staph",
-                              "Methicillin Resistant due to Staph",
-                              "Due to Gram-Negative Bacteria",
-                              "Bacterial, unspecified",
-                              "Pneumonia, unspecified",
-                              "Ventilator Associated"
-                              )) + 
-  labs(title = "Top 10 Pneumonia Diagnosis", x = "Type of Pneumonia", 
-       y = "count") +
+  coord_flip() +
+  scale_x_discrete(labels = c(
+    "Pneumococcal Septicemia",
+    "Pneumococcal Pneumonia",
+    "Klebsiella Pneumoniae",
+    "Pseudomonal",
+    "Methicillin Susceptible due to Staph",
+    "Methicillin Resistant due to Staph",
+    "Due to Gram-Negative Bacteria",
+    "Bacterial, unspecified",
+    "Pneumonia, unspecified",
+    "Ventilator Associated"
+  )) +
+  labs(
+    title = "Top 10 Pneumonia Diagnosis", x = "Type of Pneumonia",
+    y = "count"
+  ) +
   theme_minimal()
 
-# Mortality 
-final_cohort %>% 
-  ggplot(aes(x = mortality)) + 
-  geom_bar(fill = "lightblue3") + 
-  scale_x_discrete(labels = c("Yes", "No", "NA")) + 
-  labs(title = "Barplot of Mortality after 30 Days of Discharge",
-       x = "Death") + 
+# Mortality
+final_cohort %>%
+  ggplot(aes(x = mortality)) +
+  geom_bar(fill = "lightblue3") +
+  scale_x_discrete(labels = c("Yes", "No", "NA")) +
+  labs(
+    title = "Barplot of Mortality after 30 Days of Discharge",
+    x = "Death"
+  ) +
   theme_minimal()
-
 ```
 
 ## Analysis 
@@ -440,16 +426,16 @@ A predictive model for the 30-day mortality rate of patients admitted into MICU 
 
 ### 1. Logistic Regression 
 
-Before running a logistic regression, the ICD-9 Codes are recoded as an indicator variable with 1 representing the ICD-9 code for the patient is in the top five most common types of pneumonia. Additionally, all character variables are converted into factors. The `cohort_admissions` data is split into a training and test set with 75% of the observations in the training set. A logistic regression is performed on the training set with age, drug severity, ICD-9 code, principal drug, gender, and ethnic group as the covariates.
+Before running a logistic regression, the ICD-9 Codes are re-coded as an indicator variable with 1 representing the ICD-9 code for the patient is in the top five most common types of pneumonia. Additionally, all character variables are converted into factors. The `cohort_admissions` data is split into a training and test set with 75% of the observations in the training set. A logistic regression is performed on the training set with age, drug severity, ICD-9 code, principal drug, gender, and ethnic group as the covariates. A root mean squared error (RMSE) is calculated to measure performance.
 
 ```{r}
-
 final_cohort1 <- final_cohort
 
 # Recode icd9_code
 top_5 <- c("486", "48241", "4829", "4821", "99731")
-final_cohort1$icd9_code <- ifelse(final_cohort1$icd9_code %in% top_5, 
-                                  TRUE, FALSE)
+final_cohort1$icd9_code <- ifelse(final_cohort1$icd9_code %in% top_5,
+  TRUE, FALSE
+)
 
 # 75% of the sample size
 smp_size <- floor(0.75 * nrow(final_cohort))
@@ -457,7 +443,7 @@ smp_size <- floor(0.75 * nrow(final_cohort))
 # Make all character variables into factors
 columns <- c("drg_severity", "gender", "ethnic_group")
 
-final_cohort1[,columns] <- lapply(final_cohort1[, columns], as.factor)
+final_cohort1[, columns] <- lapply(final_cohort1[, columns], as.factor)
 
 # Set the seed to make partition reproducible
 set.seed(12345)
@@ -468,84 +454,87 @@ train <- final_cohort1[train_ind, ]
 test <- final_cohort1[-train_ind, ]
 
 # Build the logistic regression model
-logit <- glm(mortality ~ age + drg_severity + icd9_code + principal_dx + 
-               gender + ethnic_group, data = train, family = binomial)
+logit <- glm(mortality ~ age + drg_severity + icd9_code + principal_dx +
+  gender + ethnic_group, data = train, family = binomial)
 
 summary(logit)
 
-# Predict mortality on the test set 
+# Predict mortality on the test set
 mortality_hat <- predict(logit, test, type = "response")
 
 # Calculate RMSE
 sq_diff <- (test$mortality - mortality_hat)^2
 root_mse <- sqrt(mean(sq_diff, na.rm = TRUE))
 paste("Root MSE:", round(root_mse, 4), sep = " ")
-
 ```
 
 ### 2. Neural Network 
 
-Before running a neural network, all categorical variables are converted to dummy variables, and `subject_id` and `hadm_id` are removed from the model since they are unique to each patient and have no association to mortality rate. Additionally, the neural network cannot be performed on variables with missing data, so all observations containing a missing value are removed from the dataset. This reduces the data to 2,183 patients. The data is further split up into a training and test set with 1,637 and 546 patients respectively. The neural network is 
+Before running a neural network, all categorical variables are converted to dummy variables, and `subject_id` and `hadm_id` are removed from the model since they are unique to each patient and have no association to mortality rate. Additionally, the neural network cannot be performed on variables with missing data, so all observations containing a missing value are removed from the dataset. This reduces the data to 2,183 patients. The data is further split up into a training and test set with 1,637 and 546 patients respectively. The neural network is performed on the training set and predicted on the test set. A RMSE is calculated to measure performance.
 
-Install Neural Network Package if necessary
 ```{r}
-if("neuralnet" %in% rownames(installed.packages()) == FALSE) {install.packages("neuralnet")}
+# Install Neural Network Package if necessary
+if ("neuralnet" %in% rownames(installed.packages()) == FALSE) {
+  install.packages("neuralnet")
+}
 library(neuralnet)
 
+# Convert all categorical variables to dummy variables
 final_cohort2 <- final_cohort1 %>%
-  mutate(mortality = ifelse(mortality==TRUE, 1, 0),
-         principal_dx = ifelse(principal_dx==TRUE, 1, 0),
-         icd9_code = ifelse(icd9_code==TRUE, 1, 0),
-         gender = ifelse(gender=="M", 1, 0),
-         drg_sev1 = ifelse(drg_severity==1, 1, 0),
-         drg_sev2 = ifelse(drg_severity==2, 1, 0),
-         drg_sev3 = ifelse(drg_severity==3, 1, 0),
-         drg_sev4 = ifelse(drg_severity==4, 1, 0),
-         white = ifelse(ethnic_group=="WHITE", 1, 0),
-         asian = ifelse(ethnic_group=="ASIAN", 1, 0),
-         black = ifelse(ethnic_group=="BLACK", 1, 0),
-         hispanic = ifelse(ethnic_group=="HISPANIC", 1, 0),
-         other = ifelse(ethnic_group=="OTHER", 1, 0),
-         age = scale(age)) %>% 
-  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>% 
+  mutate(
+    mortality = ifelse(mortality == TRUE, 1, 0),
+    principal_dx = ifelse(principal_dx == TRUE, 1, 0),
+    icd9_code = ifelse(icd9_code == TRUE, 1, 0),
+    gender = ifelse(gender == "M", 1, 0),
+    drg_sev1 = ifelse(drg_severity == 1, 1, 0),
+    drg_sev2 = ifelse(drg_severity == 2, 1, 0),
+    drg_sev3 = ifelse(drg_severity == 3, 1, 0),
+    drg_sev4 = ifelse(drg_severity == 4, 1, 0),
+    white = ifelse(ethnic_group == "WHITE", 1, 0),
+    asian = ifelse(ethnic_group == "ASIAN", 1, 0),
+    black = ifelse(ethnic_group == "BLACK", 1, 0),
+    hispanic = ifelse(ethnic_group == "HISPANIC", 1, 0),
+    other = ifelse(ethnic_group == "OTHER", 1, 0),
+    age = scale(age)
+  ) %>%
+  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>%
   select("mortality", everything())
 
+# Remove NA's from mortality and create training set
 final_tt <- na.omit(final_cohort2)
 tt_size <- floor(0.75 * nrow(final_tt))
-
 tt_ind <- sample(seq_len(nrow(final_tt)), size = tt_size)
-ttrain <- final_tt[tt_ind, ]
-ttrain
-ttest
 
+ttrain <- final_tt[tt_ind, ]
 x_train <- ttrain %>% select(-mortality)
 
-## create test set
+# Create testing set
 ttest <- final_tt[-tt_ind, ]
-
 x_test <- ttest %>% select(-mortality)
 
+# Run the Neural Network
 set.seed(12345)
-
 NN <- neuralnet(mortality ~ age + icd9_code + gender + drg_sev1 + drg_sev2 +
-                 drg_sev3 + drg_sev4 + white + asian + black + hispanic + other, 
-               ttrain, hidden = 3 , linear.output = T )
+  drg_sev3 + drg_sev4 + white + asian + black + hispanic + other,
+ttrain,
+hidden = 3, linear.output = T
+)
 
-
-# plot neural network
-
+# Plot neural network
 plot(NN, rep = "best")
 
-# Prediction 
+# Prediction
 predict_testNN <- compute(NN, x_test)
-predict_testNN <- (predict_testNN$net.result * 
-                    (max(final_tt$mortality) - min(final_tt$mortality))) + 
+predict_testNN <- (predict_testNN$net.result *
+  (max(final_tt$mortality) - min(final_tt$mortality))) +
   min(final_tt$mortality)
 
-# Calculate Root Mean Square Error (RMSE)
-RMSE.NN <- (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest)) ^ 0.5
-RMSE.NN
+# Calculate RMSE
+RMSE.NN <- (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest))^0.5
+paste("Root MSE:", round(RMSE.NN, 4), sep = " ")
 ```
 
 
 ## Conclusion 
+
+From the running the two models, it appears that the logistic regression is better at predicting 30-day mortality rate for patients with pneumonia who were admitted to the MICU. From the logistic regression, it appears that age and a drug severity of 4 (highest) are significant factors in predicting 30-day mortality rate. The logistic regression resulted in a RMSE of 0.396 compared to a RMSE of 0.410 for the neural network. Both models result in a relatively low RMSE; the closer the RMSE is to zero, the better the predictive model. However, a factor in contributing to a lower RMSE for neural network could be that nearly half of the observations are removed due to missing data. Future analysis includes using a better method than omission to deal with missing data.  
