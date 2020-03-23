@@ -502,6 +502,8 @@ tt_size <- floor(0.75 * nrow(final_tt))
 
 tt_ind <- sample(seq_len(nrow(final_tt)), size = tt_size)
 ttrain <- final_tt[tt_ind, ]
+ttrain
+ttest
 
 x_train <- ttrain %>% select(-mortality)
 

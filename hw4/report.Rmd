@@ -485,10 +485,66 @@ paste("Root MSE:", round(root_mse, 4), sep = " ")
 
 ### 2. Neural Network 
 
+Before running a neural network, all categorical variables are converted to dummy variables, and `subject_id` and `hadm_id` are removed from the model since they are unique to each patient and have no association to mortality rate. Additionally, the neural network cannot be performed on variables with missing data, so all observations containing a missing value are removed from the dataset. This reduces the data to 2,183 patients. The data is further split up into a training and test set with 1,637 and 546 patients respectively. The neural network is 
 
 Install Neural Network Package if necessary
 ```{r}
 if("neuralnet" %in% rownames(installed.packages()) == FALSE) {install.packages("neuralnet")}
+library(neuralnet)
+
+final_cohort2 <- final_cohort1 %>%
+  mutate(mortality = ifelse(mortality==TRUE, 1, 0),
+         principal_dx = ifelse(principal_dx==TRUE, 1, 0),
+         icd9_code = ifelse(icd9_code==TRUE, 1, 0),
+         gender = ifelse(gender=="M", 1, 0),
+         drg_sev1 = ifelse(drg_severity==1, 1, 0),
+         drg_sev2 = ifelse(drg_severity==2, 1, 0),
+         drg_sev3 = ifelse(drg_severity==3, 1, 0),
+         drg_sev4 = ifelse(drg_severity==4, 1, 0),
+         white = ifelse(ethnic_group=="WHITE", 1, 0),
+         asian = ifelse(ethnic_group=="ASIAN", 1, 0),
+         black = ifelse(ethnic_group=="BLACK", 1, 0),
+         hispanic = ifelse(ethnic_group=="HISPANIC", 1, 0),
+         other = ifelse(ethnic_group=="OTHER", 1, 0),
+         age = scale(age)) %>% 
+  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>% 
+  select("mortality", everything())
+
+final_tt <- na.omit(final_cohort2)
+tt_size <- floor(0.75 * nrow(final_tt))
+
+tt_ind <- sample(seq_len(nrow(final_tt)), size = tt_size)
+ttrain <- final_tt[tt_ind, ]
+ttrain
+ttest
+
+x_train <- ttrain %>% select(-mortality)
+
+## create test set
+ttest <- final_tt[-tt_ind, ]
+
+x_test <- ttest %>% select(-mortality)
+
+set.seed(12345)
+
+NN <- neuralnet(mortality ~ age + icd9_code + gender + drg_sev1 + drg_sev2 +
+                 drg_sev3 + drg_sev4 + white + asian + black + hispanic + other, 
+               ttrain, hidden = 3 , linear.output = T )
+
+
+# plot neural network
+
+plot(NN, rep = "best")
+
+# Prediction 
+predict_testNN <- compute(NN, x_test)
+predict_testNN <- (predict_testNN$net.result * 
+                    (max(final_tt$mortality) - min(final_tt$mortality))) + 
+  min(final_tt$mortality)
+
+# Calculate Root Mean Square Error (RMSE)
+RMSE.NN <- (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest)) ^ 0.5
+RMSE.NN
 ```
 
 
