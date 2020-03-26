@@ -1,0 +1,624 @@
+---
+title: "Report Code"
+author: "Ami Sheth"
+date: "3/20/2020"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Task
+
+In this assignment, you are to write a report analyzing the electronic health record (EHR) data MIMIC-III. You report will demostrate your knowledge of working with PostgreSQL database, data visualization, and commonly used analytical methods such as logistic regression and neural network. Your report should include at least following parts:  
+
+1. An informative title. For example, _30-Day Mortality Rate of Myocardia Infarction Patients Admitted to CCU_.  
+
+2. Introduction. Describe the MIMIC-III data set and what research hypothesis/goal you are to address using this data.
+
+3. Data preparation. Create a study cohort from MIMIC-III corresponding to your research hypothesis/goal. See the examplary code below. Use a CONSORT flow diagram to summarize your steps to create the cohort.
+
+4. Data visualization. Use visualization to summarize the cohort you created. 
+
+5. Analytics. Use at least two analytical approaches to address your research hypothesis/goal. For example, we can use (1) logistic regression and (2) neural network to build a predictive model for the 30-day mortality rate of patients admitted into CCU and compare their predictive performance. Summarize your results in graphs.
+
+6. Conclusions. 
+
+## Connect to PostgresSQL database
+
+Load database libraries and the tidyverse frontend:
+```{r}
+library(DBI)
+library(RPostgreSQL)
+library(tidyverse)
+library(lubridate)
+library(keras)
+# tensorflow::install_tensorflow()
+```
+
+Credentials for using PostgreSQL database. We are going to use username `postgres` with password `postgres` to access the `mimic` database in the schemee `mimiciii`. 
+```{r}
+# Load configuration settings
+dbdriver <- "PostgreSQL"
+# host  <- '127.0.0.1'
+# port  <- '5432'
+user <- "postgres"
+password <- "postgres"
+dbname <- "mimic"
+schema <- "mimiciii"
+# Connect to the database using the configuration settings
+con <- dbConnect(RPostgreSQL::PostgreSQL(),
+  dbname = dbname,
+  # host = host,
+  # port = port,
+  user = user,
+  password = password
+)
+# Set the default schema
+dbExecute(con, paste("SET search_path TO ", schema, sep = " "))
+con
+```
+
+## Query and subsetting
+
+In this section, we create a cohort of patients who were directly admitted into MICU and were diagnosed with pneumonia.
+
+First we create a (query) table of patients who were directly admitted into MICU.
+```{r}
+tbl(con, "transfers") %>%
+  select(subject_id, hadm_id, prev_careunit, curr_careunit) %>%
+  filter(is.na(prev_careunit) & curr_careunit == "MICU") %>%
+  select(subject_id, hadm_id) %>%
+  distinct() %>%
+  print() -> micu_admissions
+
+# collect(micu_admissions)
+```
+
+Now we want to restrict to pneumonia patients. To find all possible ICD-9 codes related to pneumonia, we search for string `pneumonia` in the `long_title` of table `d_icd_diagnoses`:
+```{r}
+tbl(con, "d_icd_diagnoses") %>%
+  filter(str_detect(tolower(long_title), "pneumonia")) %>%
+  print() -> pneu_codes
+```
+
+`diagnoses_icd` table stores the diagnosis of each admission. We use `semi_join()` to keep the rows in `diagnoses_icd` that match the ICD-9 codes related to pneumonia:
+```{r}
+tbl(con, "diagnoses_icd") %>%
+  semi_join(pneu_codes, by = "icd9_code") %>%
+  print() -> pneu_admissions
+
+# collect(pneu_admissions)
+```
+
+Pneumonia may not be listed as the principal diagnosis; as explained in [the documentation for the `patients` table](https://mimic.physionet.org/mimictables/diagnoses_icd/), the `seq_num` field is a priority ranking for the diagnoses generated at the end of stay. In order to focus on patients for whom pneumonia was central to their hospitalization, we will include records with pneumonia in any of the first five diagnosis positions, according to the `seq_num` field. To avoid duplicate admissions, we use `group_by()` to limit the query to the first pneumonia diagnosis for each admission.
+```{r}
+pneu_admissions %>%
+  filter(seq_num <= 5) %>%
+  group_by(subject_id, hadm_id) %>%
+  filter(min_rank(seq_num) <= 1) %>%
+  ungroup() %>%
+  select(subject_id, hadm_id, icd9_code, seq_num) %>%
+  print() -> pneu_admissions
+
+# collect(pneu_admissions)
+```
+
+Now we `inner_join` the table of admissions to MICU and the table of admissions that include pneumonia diagnosis.
+```{r}
+micu_admissions %>%
+  inner_join(pneu_admissions, by = c("subject_id", "hadm_id")) %>%
+  print() -> cohort_admissions
+
+# collect(cohort_admissions)
+```
+
+## Transform and augment query tables
+
+Now we create a logical variable indicating the pneumonia is the principal diagonosis or not (according to `seq_num`).
+```{r}
+cohort_admissions %>%
+  mutate(principal_dx = seq_num == 1) %>%
+  select(-seq_num) %>%
+  print() -> cohort_admissions
+
+# collect(cohort_admissions)
+```
+
+We want to add information about the severity of patients’ ailments. The `drgcodes` table contains, for `DRG` codes from the All Payers Registry (APR), severity and mortality indicators. We pull the drug severity information and right-join it to our query table.
+```{r}
+tbl(con, "drgcodes") %>%
+  filter(str_detect(drg_type, "APR")) %>%
+  select(subject_id, hadm_id, drg_severity) %>%
+  right_join(cohort_admissions, by = c("subject_id", "hadm_id")) %>%
+  mutate(drg_severity = ifelse(is.na(drg_severity), 1, drg_severity)) %>%
+  print() -> cohort_admissions
+
+# collect(cohort_admissions)
+```
+
+Pull the admission time `admittime`, discharge time `dischtime`, date of birth `dob`, and date of death `dod`. We are interested in the mortaility rate 30 days after discharge. So we only keep patients who didn't die in hospital.
+```{r}
+cohort_admissions %>%
+  left_join(
+    select(
+      tbl(con, "admissions"),
+      subject_id, hadm_id, admittime, dischtime, hospital_expire_flag
+    ),
+    by = c("subject_id", "hadm_id")
+  ) %>%
+  filter(hospital_expire_flag == 0) %>% # patients who did not die in hospital
+  select(-hospital_expire_flag) %>%
+  left_join(
+    select(tbl(con, "patients"), subject_id, dob, dod),
+    by = "subject_id"
+  ) %>%
+  print(width = Inf) -> cohort_admissions
+
+# collect(cohort_admissions)
+```
+
+To add `age` (at admission) variable into the table. [The documentation for the patients table](https://mimic.physionet.org/mimictables/patients/) explains that patients of 90 years and older had their ages artificially inflated, so we remove these patients from the analysis.
+```{r}
+cohort_admissions %>%
+  mutate(tt_death = DATE_PART("day", dod - dischtime)) %>%
+  mutate(mortality = tt_death <= 30) %>%
+  mutate(age = date_part("year", admittime) - date_part("year", dob)) %>%
+  filter(age < 90) %>%
+  mutate(age = age - ifelse(
+    date_part("month", admittime) < date_part("month", dob) |
+      (
+        date_part("month", admittime) == date_part("month", dob) &
+          date_part("day", admittime) < date_part("day", dob)
+      ),
+    1,
+    0
+  )) %>%
+  select(-admittime, -dischtime, -dob, -dod, -tt_death) %>%
+  select(subject_id, hadm_id, age, mortality, everything()) %>%
+  print() -> cohort_admissions
+
+# collect(cohort_admissions)
+```
+
+Many mortality indicators are missing, due to neither the hospital database nor the social security database having a record of these patients’ deaths. We could convert these to `FALSE` values, but it may be helpful to retain in the analytic table this information on whether deaths were recorded at all, e.g. for validation or sensitivity testing.
+
+Finally, let's merge some demographic information (ethnicity, gender) into our study `cohort_admissions`.
+```{r}
+tbl(con, "admissions") %>%
+  select(subject_id, ethnicity) %>%
+  distinct() %>%
+  print() -> cohort_subjects
+
+# collect(cohort_subjects)
+```
+
+```{r}
+tbl(con, "patients") %>%
+  select(subject_id, gender) %>%
+  distinct() %>%
+  full_join(cohort_subjects, by = "subject_id") %>%
+  print() -> cohort_subjects
+
+# collect(cohort_subjects)
+```
+
+```{r}
+cohort_subjects %>%
+  semi_join(cohort_admissions, by = "subject_id") %>%
+  print() -> cohort_subjects
+
+# collect(cohort_subjects)
+```
+
+Let's resolve some diversity and inconsistency in the `ethnicity` field:
+```{r}
+unknown_ethnicity <- c(
+  "OTHER",
+  "UNABLE TO OBTAIN",
+  "UNKNOWN/NOT SPECIFIED",
+  "MULTI RACE ETHNICITY",
+  "PATIENT DECLINED TO ANSWER",
+  "UNKNOWN"
+)
+
+cohort_subjects %>%
+  collect() %>%
+  mutate(ethnic_group = case_when(
+    str_detect(ethnicity, "^ASIAN") ~ "ASIAN",
+    str_detect(ethnicity, "^BLACK") ~ "BLACK",
+    str_detect(ethnicity, "^HISPANIC") ~ "HISPANIC",
+    str_detect(ethnicity, "^WHITE") ~ "WHITE",
+    ethnicity %in% unknown_ethnicity ~ NA_character_,
+    TRUE ~ NA_character_
+  )) %>%
+  select(subject_id, gender, ethnic_group) %>%
+  print() -> cohort_subjects
+```
+
+Some patients are coded as belonging to more than one ethnic group. To resolve these inconsistencies, we define a helper function to pick the modal value from a vector of values in R, which can be used by the `summarize()` function to choose one ethnic group for each patient.
+```{r}
+most <- function(x) {
+  if (all(is.na(x))) {
+    return(NA_character_)
+  }
+  y <- table(x, useNA = "no")
+  if (length(which(y == max(y))) > 1) {
+    return(NA_character_)
+  }
+  return(names(y)[which.max(y)])
+}
+
+cohort_subjects %>%
+  group_by(subject_id) %>%
+  summarize(ethnic_group = most(ethnic_group)) %>%
+  ungroup() %>%
+  mutate(ethnic_group = ifelse(is.na(ethnic_group), "UNKNOWN",
+    ethnic_group
+  )) %>%
+  print() -> cohort_ethnic_groups
+```
+```{r}
+cohort_subjects %>%
+  select(subject_id, gender) %>%
+  left_join(cohort_ethnic_groups, by = "subject_id") %>%
+  print() -> cohort_subjects
+```
+
+Now we add the demographic information `gender` and `ethnicity` into our `cohort_admissions` table:
+```{r}
+cohort_admissions %>%
+  left_join(cohort_subjects, by = "subject_id", copy = TRUE) %>%
+  print() -> cohort_admissions
+
+# collect(cohort_admissions)
+```
+
+Now we save the `cohort_admissions` into a csv file for data visualization and analysis:
+```{r}
+final_cohort <- collect(cohort_admissions)
+```
+
+## Close the connection to a database
+
+Close the connection:
+```{r}
+dbDisconnect(con)
+```
+
+## Summarize Cohort via Data Visualization
+
+### Plots for Demographic Features 
+```{r}
+# Gender
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
+  ggplot(aes(x = gender)) +
+  geom_bar(fill = "lightblue3") +
+  scale_x_discrete(labels = c("Female", "Male")) +
+  labs(title = "Barplot of Gender", x = "Gender") +
+  theme_minimal()
+
+# Age
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
+  ggplot(aes(x = age)) +
+  geom_histogram(bins = 30, fill = "lightblue3") +
+  labs(title = "Histogram of Age", x = "Age") +
+  theme_minimal()
+
+# Ethnic Group
+final_cohort %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
+  ggplot(aes(x = ethnic_group)) +
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Barplot of Ethnicity", x = "Ethnicity") +
+  theme_minimal()
+```
+
+### Plots for Patients Relationship to Pneumonia 
+
+```{r}
+# Drug Severity
+final_cohort %>%
+  ggplot(aes(x = drg_severity)) +
+  geom_bar(fill = "lightblue3") +
+  labs(title = "Graph of Drug Severity", x = "Drug Severity") +
+  theme_minimal()
+
+# Principle Disease
+final_cohort %>%
+  ggplot(aes(x = principal_dx)) +
+  geom_bar(fill = "lightblue3") +
+  scale_x_discrete(labels = c("No", "Yes")) +
+  labs(title = "Pneumonia as Principle Diagnosis", x = NULL) +
+  theme_minimal()
+
+# ICDA_Code
+final_cohort %>%
+  count(icd9_code) %>%
+  arrange(desc(n)) %>%
+  head(n = 10) %>%
+  ggplot(aes(x = icd9_code, y = n)) +
+  geom_bar(stat = "identity", fill = "lightblue3") +
+  coord_flip() +
+  scale_x_discrete(labels = c(
+    "Pneumococcal Septicemia",
+    "Pneumococcal Pneumonia",
+    "Klebsiella Pneumoniae",
+    "Pseudomonal",
+    "Methicillin Susceptible due to Staph",
+    "Methicillin Resistant due to Staph",
+    "Due to Gram-Negative Bacteria",
+    "Bacterial, unspecified",
+    "Pneumonia, unspecified",
+    "Ventilator Associated"
+  )) +
+  labs(
+    title = "Top 10 Pneumonia Diagnosis", x = "Type of Pneumonia",
+    y = "count"
+  ) +
+  theme_minimal()
+
+# Mortality
+final_cohort %>%
+  ggplot(aes(x = mortality)) +
+  geom_bar(fill = "lightblue3") +
+  scale_x_discrete(labels = c("No", "Yes", "NA")) +
+  labs(
+    title = "Barplot of Mortality after 30 Days of Discharge",
+    x = "Death"
+  ) +
+  theme_minimal()
+```
+
+## Analytics
+
+### Logistic Regression
+
+```{r}
+final_cohort1 <- final_cohort
+
+## Recode icd9_code
+top_5 <- c("486", "48241", "4829", "4821", "99731")
+final_cohort1$icd9_code <- ifelse(final_cohort1$icd9_code %in% top_5,
+  TRUE, FALSE
+)
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(final_cohort))
+
+## Make all character variables into factors
+columns <- c("drg_severity", "gender", "ethnic_group")
+
+final_cohort1[, columns] <- lapply(final_cohort1[, columns], as.factor)
+
+## set the seed to make partition reproducible
+set.seed(12345)
+
+## create train and test set
+train_ind <- sample(seq_len(nrow(final_cohort1)), size = smp_size)
+train <- final_cohort1[train_ind, ]
+test <- final_cohort1[-train_ind, ]
+
+logit <- glm(mortality ~ age + drg_severity + icd9_code + principal_dx +
+  gender + ethnic_group, data = train, family = binomial)
+summary(logit)
+
+mortality_hat <- predict(logit, test, type = "response")
+
+## calculate RMSE
+sq_diff <- (test$mortality - mortality_hat)^2
+root_mse <- sqrt(mean(sq_diff, na.rm = TRUE))
+paste("Root MSE:", round(root_mse, 4), sep = " ")
+```
+
+### Neural Network
+
+Attempt to use keras package for neural network
+```{r, eval = FALSE}
+final_cohort2 <- final_cohort1 %>%
+  mutate(
+    mortality = ifelse(mortality == TRUE, 1, 0),
+    principal_dx = ifelse(principal_dx == TRUE, 1, 0),
+    icd9_code = ifelse(icd9_code == TRUE, 1, 0),
+    gender = ifelse(gender == "M", 1, 0),
+    drg_sev1 = ifelse(drg_severity == 1, 1, 0),
+    drg_sev2 = ifelse(drg_severity == 2, 1, 0),
+    drg_sev3 = ifelse(drg_severity == 3, 1, 0),
+    drg_sev4 = ifelse(drg_severity == 4, 1, 0),
+    white = ifelse(ethnic_group == "WHITE", 1, 0),
+    asian = ifelse(ethnic_group == "ASIAN", 1, 0),
+    black = ifelse(ethnic_group == "BLACK", 1, 0),
+    hispanic = ifelse(ethnic_group == "HISPANIC", 1, 0),
+    other = ifelse(ethnic_group == "OTHER", 1, 0),
+    age = scale(age)
+  ) %>%
+  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>%
+  select("mortality", everything())
+
+# final_cohort2
+
+## set the seed to make partition reproducible
+set.seed(12345)
+
+## create train set
+train_ind2 <- sample(seq_len(nrow(final_cohort2)), size = smp_size)
+train2 <- final_cohort2[train_ind2, ]
+
+x_train <- train2 %>% select(-mortality)
+x_train <- as.matrix(x_train)
+dimnames(x_train) <- NULL
+
+y_train <- train2 %>% select(mortality)
+y_train <- as.matrix(y_train)
+dimnames(y_train) <- NULL
+# y_train_cat <- to_categorical(y_train)
+
+## create test set
+test2 <- final_cohort2[-train_ind2, ]
+
+x_test <- test2 %>% select(-mortality)
+x_test <- as.matrix(x_test)
+dimnames(x_test) <- NULL
+
+y_test <- test2 %>% select(mortality)
+y_test <- as.matrix(y_test)
+dimnames(y_test) <- NULL
+# y_test_cat <- to_categorical(y_test)
+
+# image(t(x_train), useRaster=TRUE, axes=FALSE, col=grey(seq(0, 1, length = 256)))
+
+
+# model <- keras_model_sequential()
+
+# Add layers to the model
+# model %>%
+#     layer_dense(units = 8, activation = 'relu', input_shape = c(4)) %>%
+#     layer_dense(units = 3, activation = 'softmax')
+```
+
+Another package for neural network
+```{r}
+# install.packages("neuralnet")
+library(neuralnet)
+
+final_cohort2 <- final_cohort1 %>%
+  mutate(
+    mortality = ifelse(mortality == TRUE, 1, 0),
+    principal_dx = ifelse(principal_dx == TRUE, 1, 0),
+    icd9_code = ifelse(icd9_code == TRUE, 1, 0),
+    gender = ifelse(gender == "M", 1, 0),
+    drg_sev1 = ifelse(drg_severity == 1, 1, 0),
+    drg_sev2 = ifelse(drg_severity == 2, 1, 0),
+    drg_sev3 = ifelse(drg_severity == 3, 1, 0),
+    drg_sev4 = ifelse(drg_severity == 4, 1, 0),
+    white = ifelse(ethnic_group == "WHITE", 1, 0),
+    asian = ifelse(ethnic_group == "ASIAN", 1, 0),
+    black = ifelse(ethnic_group == "BLACK", 1, 0),
+    hispanic = ifelse(ethnic_group == "HISPANIC", 1, 0),
+    other = ifelse(ethnic_group == "OTHER", 1, 0),
+    age = scale(age)
+  ) %>%
+  select(-c("subject_id", "hadm_id", "drg_severity", "ethnic_group")) %>%
+  select("mortality", everything())
+
+final_tt <- na.omit(final_cohort2)
+tt_size <- floor(0.75 * nrow(final_tt))
+
+tt_ind <- sample(seq_len(nrow(final_tt)), size = tt_size)
+ttrain <- final_tt[tt_ind, ]
+ttrain
+ttest
+
+x_train <- ttrain %>% select(-mortality)
+
+## create test set
+ttest <- final_tt[-tt_ind, ]
+
+x_test <- ttest %>% select(-mortality)
+
+set.seed(12345)
+
+NN <- neuralnet(mortality ~ age + icd9_code + gender + drg_sev1 + drg_sev2 +
+  drg_sev3 + drg_sev4 + white + asian + black + hispanic + other,
+ttrain,
+hidden = 3, linear.output = T
+)
+
+## plot neural network
+plot(NN, rep = "best")
+
+## prediction
+predict_testNN <- compute(NN, x_test)
+predict_testNN <- (predict_testNN$net.result *
+  (max(final_tt$mortality) - min(final_tt$mortality))) +
+  min(final_tt$mortality)
+
+## calculate Root Mean Square Error (RMSE)
+RMSE.NN <- (sum((ttest$mortality - predict_testNN)^2) / nrow(ttest))^0.5
+RMSE.NN
+```
+
+
+## CONSORT Flow Diagrams
+
+CONSORT Flow Diagrams can be used to plot the flow of data selection of a patient cohort.   
+For more details, see:
+[The CONSORT Flow Diagram](http://www.consort-statement.org/consort-statement/flow-diagram). Following code shows an example. 
+
+```{r plot, eval=FALSE}
+library(shape)
+library(diagram)
+
+## set margins and multiplot
+par(mfrow = c(1, 1))
+par(mar = c(0, 0, 0, 0))
+
+## initialise a plot device
+openplotmat()
+
+## position of boxes
+## 1st column indicates x axis position between 0 and 1
+## 2nd column indicates y axis position between 0 and 1
+## automatically assigns vertical position
+num_of_boxes <- 7
+auto_coords <- coordinates(num_of_boxes)
+vert_pos <- rev(auto_coords[, 1])
+box_pos <- matrix(nrow = num_of_boxes, ncol = 2, data = 0)
+box_pos[1, ] <- c(0.20, vert_pos[1]) ## 1st box
+box_pos[2, ] <- c(0.70, vert_pos[2]) ## 2nd box
+box_pos[3, ] <- c(0.70, vert_pos[3]) ## 3rd box
+box_pos[4, ] <- c(0.20, vert_pos[4]) ## etc...
+box_pos[5, ] <- c(0.70, vert_pos[5])
+box_pos[6, ] <- c(0.70, vert_pos[6])
+box_pos[7, ] <- c(0.20, vert_pos[7])
+
+## content of boxes
+box_content <- matrix(nrow = num_of_boxes, ncol = 1, data = 0)
+box_content[1] <- "All patients in MIMIC-III \n n = 58,976"
+box_content[2] <- "Exclude patients not admitted to MICU \n n = 38,683"
+box_content[3] <- "Exclude patients not diagnosed for pneumonia or \n pneumonia not labeled as first five diagonses \n n = 16,508" ## passes 80 lines but necessary for format
+box_content[4] <- "Study Cohort with drug severity \n n = 5,963"
+box_content[5] <- "Exclude patients who died in hospital \n n = 1,188"
+box_content[6] <- "Exclude patients of age > 90 \n n = 432"
+box_content[7] <- "Study cohort with gender and ethnicity \n n = 4,542"
+
+
+## adjust the size of boxes to fit content
+box_x <- c(0.20, 0.25, 0.25, 0.20, 0.25, 0.25, 0.20)
+box_y <- c(0.07, 0.05, 0.08, 0.07, 0.05, 0.05, 0.07)
+
+## draw the arrows
+straightarrow(
+  from = c(box_pos[1, 1], box_pos[2, 2]), to = box_pos[2, ],
+  lwd = 1
+)
+straightarrow(
+  from = c(box_pos[1, 1], box_pos[3, 2]), to = box_pos[3, ],
+  lwd = 1
+)
+straightarrow(
+  from = c(box_pos[4, 1], box_pos[5, 2]), to = box_pos[5, ],
+  lwd = 1
+)
+straightarrow(
+  from = c(box_pos[4, 1], box_pos[6, 2]), to = box_pos[6, ],
+  lwd = 1
+)
+straightarrow(from = box_pos[1, ], to = box_pos[4, ], lwd = 1)
+straightarrow(from = box_pos[4, ], to = box_pos[7, ], lwd = 1)
+
+## draw the boxes
+for (i in 1:num_of_boxes) {
+  textrect(
+    mid = box_pos[i, ], radx = box_x[i], rady = box_y[i],
+    lab = box_content[i],
+    shadow.col = "grey"
+  )
+}
+```
