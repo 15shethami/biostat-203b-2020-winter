@@ -5,8 +5,7 @@ library(gganimate)
 china_map <- function(plotdate, case, name) {
   ncov_tbl %>%
     filter(`Country/Region` %in% c(
-      "Mainland China", "Macau",
-      "Hong Kong", "Taiwan"
+      "China", "Taiwan*"
     )) %>%
     filter(Date == plotdate, Case == case) %>%
     group_by(`Province/State`) %>%
@@ -28,8 +27,7 @@ china_map <- function(plotdate, case, name) {
 province_bar <- function(plotdate, case, color, name) {
   ncov_tbl %>%
     filter(`Country/Region` %in% c(
-      "Mainland China", "Macau",
-      "Hong Kong", "Taiwan"
+      "China", "Taiwan*"
     )) %>%
     filter(Date == plotdate, Case == case) %>%
     group_by(`Province/State`) %>%
