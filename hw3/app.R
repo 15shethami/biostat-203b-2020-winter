@@ -27,7 +27,7 @@ ui <- fluidPage(
       dateInput("date", 
                 label = "Select a date",
                 min = "2020-01-22", 
-                max = as.character(Sys.Date()),
+                max = "2020-03-23",
                 value = "2020-01-22"),
       
       helpText("Select a stock to examine. 
