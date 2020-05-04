@@ -43,9 +43,9 @@ Since Feb 11, JHU SSE is hosting 2019 nCoV data on GitHub repo: <https://github.
 
 Let's import the time series data directly from the csv file on GitHub:
 ```{r}
-(confirmed <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"))
-(recovered <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv"))
-(death <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"))
+confirmed <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/archived_data/archived_time_series/time_series_19-covid-Confirmed_archived_0325.csv")
+recovered <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/archived_data/archived_time_series/time_series_19-covid-Recovered_archived_0325.csv")
+death <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/archived_data/archived_time_series/time_series_19-covid-Deaths_archived_0325.csv")
 ```
 
 ## Tidy data
@@ -124,8 +124,7 @@ chn_map %>%
 These are the provinces available from the JHU sheets.
 ```{r}
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", 
-                                 "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("China", "Taiwan*")) %>% 
   distinct(`Province/State`, `Country/Region`) %>%
   print(n = Inf)
 ```
@@ -226,8 +225,7 @@ Try to join the virus data `ncov_tbl` and map data `chn_prov`.
 plotdate <- "2020-02-14"
 case <- "confirmed"
 ncov_tbl %>%
-  filter(`Country/Region` %in% c("Mainland China", "Macau", 
-                                 "Hong Kong", "Taiwan")) %>%
+  filter(`Country/Region` %in% c("China", "Taiwan*")) %>%
   filter(Date == plotdate, Case == case) %>%
   group_by(`Province/State`) %>%  
   top_n(1, Date) %>%
