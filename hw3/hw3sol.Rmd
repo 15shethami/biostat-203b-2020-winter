@@ -127,6 +127,21 @@ ncov_tbl %>%
   filter(`Country/Region` %in% c("China", "Taiwan*")) %>% 
   distinct(`Province/State`, `Country/Region`) %>%
   print(n = Inf)
+
+col <- ncov_tbl %>%
+  filter(`Country/Region` %in% c("China", "Taiwan*")) %>% 
+  distinct(`Province/State`, `Country/Region`) %>%
+  select("Province/State")
+
+col <- as.matrix(col)
+col[is.na(col)] <- "Taiwan"
+col
+
+ncov_tbl %>%
+  filter(`Country/Region` %in% c("China", "Taiwan*")) %>% 
+  distinct(`Province/State`, `Country/Region`) %>%
+  mutate_all(~replace(., is.na(.), "Taiwan")) %>% 
+  print(n = Inf)
 ```
 In order to join the tibbles `ncov_tbl` and `chn_map`, we need to use the province name as key. Let's create a function to translate Chinese province name to English.
 ```{r}
@@ -227,6 +242,7 @@ case <- "confirmed"
 ncov_tbl %>%
   filter(`Country/Region` %in% c("China", "Taiwan*")) %>%
   filter(Date == plotdate, Case == case) %>%
+  mutate(`Province/State` = replace_na(`Province/State`,"Taiwan")) %>% 
   group_by(`Province/State`) %>%  
   top_n(1, Date) %>%
   right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) 

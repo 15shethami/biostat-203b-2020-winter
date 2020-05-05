@@ -8,6 +8,7 @@ china_map <- function(plotdate, case, name) {
       "China", "Taiwan*"
     )) %>%
     filter(Date == plotdate, Case == case) %>%
+    mutate(`Province/State` = replace_na(`Province/State`,"Taiwan")) %>% 
     group_by(`Province/State`) %>%
     top_n(1, Date) %>% # take the latest count on that date
     right_join(chn_prov, by = c("Province/State" = "NAME_ENG")) %>%
@@ -30,6 +31,7 @@ province_bar <- function(plotdate, case, color, name) {
       "China", "Taiwan*"
     )) %>%
     filter(Date == plotdate, Case == case) %>%
+    mutate(`Province/State` = replace_na(`Province/State`,"Taiwan")) %>% 
     group_by(`Province/State`) %>%
     ggplot(mapping = aes(x = `Province/State`, y = `Count`)) +
     geom_col(fill = color) +
